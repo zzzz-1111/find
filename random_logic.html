@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>随机逻辑实现</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+        }
+        button {
+            margin: 5px;
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        input {
+            padding: 5px;
+            font-size: 14px;
+            margin: 5px;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .action-section {
+            margin-top: 10px;
+        }
+        .input-group {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>随机逻辑实现</h1>
+    <div class="button-row">
+        <button onclick="runZero()">随机生成1-100（不重复）</button>
+        <button onclick="runOne()">随机排列1-4</button>
+        <button onclick="runTwo()">随机分队</button>
+        <button onclick="clearResult()">隐藏结果</button>
+    </div>
+    <div class="action-section">
+        <button onclick="resetVis()">复位（清除随机记录）</button>
+    </div>
+    <div class="action-section">
+        <div class="input-group">
+            <label for="newName">名字：</label>
+            <input type="text" id="newName" placeholder="输入名字">
+            <button onclick="addName()">添加</button>
+            <input type="text" id="removeName" placeholder="输入要删除的名字">
+            <button onclick="removeName()">删除</button>
+        </div>
+    </div>
+    <div id="result">结果将显示在这里</div>
+
+    <script>
+        // 逻辑 0：标记数组，避免重复数字
+        const vis = new Array(101).fill(false);
+
+        // 逻辑 2：名字数组
+        let names = ["赵锦嘉", "饶翰宸", "谭棋文", "林鑫", "赵烜", "许加欢", "贺俊杰", "秦心叶", "廖静怡", "林利"];
+
+        // 逻辑 0：随机生成 1-100，不重复
+        function runZero() {
+            let x;
+            do {
+                x = Math.floor(Math.random() * 100) + 1;
+            } while (vis[x]);
+            vis[x] = true;
+            document.getElementById("result").innerText = `随机数字：${x}`;
+        }
+
+        // 逻辑 0：复位
+        function resetVis() {
+            for (let i = 0; i < vis.length; i++) {
+                vis[i] = false;
+            }
+            document.getElementById("result").innerText = "vis 数组已复位！";
+        }
+
+        // 逻辑 1：随机排列 1-4
+        function runOne() {
+            const arr = [1, 2, 3, 4];
+            const shuffled = arr.sort(() => Math.random() - 0.5);
+            document.getElementById("result").innerText = `随机排列：${shuffled.slice(0, 3).join(' ')}`;
+        }
+
+        // 逻辑 2：随机分队
+        function runTwo() {
+            const shuffled = names.sort(() => Math.random() - 0.5);
+
+            const team1 = shuffled.slice(0, Math.floor(shuffled.length / 2)).join(', ');
+            const team2 = shuffled.slice(Math.floor(shuffled.length / 2)).join(', ');
+
+            document.getElementById("result").innerText = `1队: ${team1}\n2队: ${team2}`;
+        }
+
+        // 添加名字到分队
+        function addName() {
+            const newName = document.getElementById("newName").value.trim();
+            if (newName) {
+                names.push(newName);
+                document.getElementById("result").innerText = `名字 "${newName}" 已添加！`;
+                document.getElementById("newName").value = ""; // 清空输入框
+            } else {
+                document.getElementById("result").innerText = "请输入有效的名字！";
+            }
+        }
+
+        // 删除名字从分队
+        function removeName() {
+            const nameToRemove = document.getElementById("removeName").value.trim();
+            if (nameToRemove) {
+                const index = names.indexOf(nameToRemove);
+                if (index !== -1) {
+                    names.splice(index, 1);
+                    document.getElementById("result").innerText = `名字 "${nameToRemove}" 已删除！`;
+                } else {
+                    document.getElementById("result").innerText = `名字 "${nameToRemove}" 未找到！`;
+                }
+                document.getElementById("removeName").value = ""; // 清空输入框
+            } else {
+                document.getElementById("result").innerText = "请输入有效的名字！";
+            }
+        }
+
+        // 清空显示结果
+        function clearResult() {
+            document.getElementById("result").innerText = "";
+        }
+    </script>
+</body>
+</html>
