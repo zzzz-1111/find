@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>点名系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-image: url('../resource/bg.png'); /* 设置背景图像 */
+            background-size: cover; /* 背景图像会裁切以覆盖整个屏幕 */
+            background-position: center; /* 背景居中 */
+            background-repeat: no-repeat; /* 背景图像不重复 */
+            min-height: 100vh; /* 保证最小高度为视口高度 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center; /* 居中所有内容 */
+            text-align: center; /* 使文本居中 */
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        #result {
+            font-size: 24px;
+            margin-top: 30px;
+            color: #333;
+            transition: opacity 0.5s ease-in-out; /* 添加平滑切换效果 */
+        }
+        #nameList {
+            margin-top: 20px;
+        }
+        input[type="text"] {
+            padding: 5px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        #names {
+            list-style-type: none;
+            padding: 0;
+            display: flex; /* 横向排列列表项 */
+            justify-content: center; /* 居中对齐 */
+            gap: 10px; /* 调整名字之间的间隔 */
+            flex-wrap: wrap; /* 允许换行 */
+            margin: 20px 0;
+        }
+        #names li {
+            padding: 5px 15px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: white;
+            border-radius: 5px;
+            transition: transform 0.3s ease, opacity 0.5s ease; /* 平滑动画 */
+        }
+        #names li:hover {
+            transform: scale(1.1); /* 鼠标悬停时放大 */
+        }
+    </style>
+</head>
+<body>
+    <h1>点名系统</h1>
+
+    <!-- 名字输入和添加 -->
+    <div>
+        <input type="text" id="nameInput" placeholder="输入名字">
+        <button onclick="addName()">添加名字</button>
+    </div>
+
+    <!-- 名字展示 -->
+    <div id="nameList">
+        <h3>已添加的名字:</h3>
+        <ul id="names">
+            <!-- 动态显示名字 -->
+        </ul>
+    </div>
+
+    <!-- 控制按钮 -->
+    <div>
+        <button id="startBtn" onclick="startPicking()">开始</button>
+        <button id="stopBtn" onclick="stopPicking()" disabled>停止</button>
+    </div>
+
+    <!-- 显示点名结果 -->
+    <div id="result"></div>
+
+    <script>
+        // 存储名字
+        let names = [];
+        let pickingInterval;
+        
+        // 添加名字到列表
+        function addName() {
+            const nameInput = document.getElementById("nameInput");
+            const name = nameInput.value.trim();
+            if (name) {
+                names.push(name);
+                updateNameList();
+                nameInput.value = ""; // 清空输入框
+            }
+        }
+
+        // 更新名字列表
+        function updateNameList() {
+            const nameList = document.getElementById("names");
+            nameList.innerHTML = ""; // 清空现有的列表
+            names.forEach(name => {
+                const li = document.createElement("li");
+                li.textContent = name;
+                nameList.appendChild(li);
+            });
+        }
+
+        // 开始随机点名
+        function startPicking() {
+            if (names.length === 0) {
+                alert("请添加一些名字！");
+                return;
+            }
+
+            // 禁用开始按钮，启用停止按钮
+            document.getElementById("startBtn").disabled = true;
+            document.getElementById("stopBtn").disabled = false;
+
+            pickingInterval = setInterval(() => {
+                const randomName = names[Math.floor(Math.random() * names.length)];
+                const result = document.getElementById("result");
+                result.style.opacity = 0; // 先让名字透明
+                setTimeout(() => {
+                    result.textContent = randomName; // 更新名字
+                    result.style.opacity = 1; // 过渡回不透明
+                }, 25); // 25ms延迟，等待透明过渡完成
+            }, 70); // 每70毫秒更换一次名字
+        }
+
+        // 停止点名
+        function stopPicking() {
+            // 停止定时器
+            clearInterval(pickingInterval);
+            document.getElementById("startBtn").disabled = false;
+            document.getElementById("stopBtn").disabled = true;
+        }
+    </script>
+
+    <div class="button">
+        <a href="../index.html">
+            <button>返回首页</button>
+        </a>
+    </div>
+</body>
+</html>
