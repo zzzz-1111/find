@@ -24,7 +24,7 @@ window.addText = async function() {
     try {
         await newText.save();
         textInput.value = '';
-        fetchTexts();
+        fetchTexts(); // 添加文本后刷新文本列表
     } catch (error) {
         console.error('保存文本失败:', error);
     }
@@ -35,7 +35,7 @@ window.fetchTexts = async function() {
     try {
         const results = await query.find();
         const textList = document.getElementById('textList');
-        textList.innerHTML = '';
+        textList.innerHTML = ''; // 清空当前列表
 
         results.forEach(result => {
             const text = result.get('text');
@@ -50,6 +50,10 @@ window.fetchTexts = async function() {
             li.appendChild(deleteButton);
             textList.appendChild(li);
         });
+
+        // 更新信息条数
+        updateInfoCount(results.length);
+
     } catch (error) {
         console.error('获取文本失败:', error);
     }
@@ -59,10 +63,16 @@ window.deleteText = async function(objectId) {
     const object = AV.Object.createWithoutData('SharedText', objectId);
     try {
         await object.destroy();
-        fetchTexts();
+        fetchTexts(); // 删除文本后刷新列表
     } catch (error) {
         console.error('删除文本失败:', error);
     }
+}
+
+// 更新信息条数
+function updateInfoCount(count) {
+    const infoCount = document.getElementById('infoCount');
+    infoCount.textContent = count; // 设置当前信息条数
 }
 
 // 页面加载时获取初始数据
