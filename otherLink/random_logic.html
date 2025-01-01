@@ -8,6 +8,11 @@
         body {
             font-family: Arial, sans-serif;
             margin: 10px;
+            background-image: url('../resource/bg.png'); /* 设置背景图像 */
+            background-size: cover; /* 背景图像会裁切以覆盖整个屏幕 */
+            background-position: center; /* 背景居中 */
+            background-repeat: no-repeat; /* 背景图像不重复 */
+            min-height: 100vh; /* 保证最小高度为视口高度 */
         }
         button {
             margin: 5px;
@@ -32,6 +37,7 @@
         }
         .action-section {
             margin-top: 10px;
+            text-align: left; /* 使按钮左对齐 */
         }
         .input-group {
             display: flex;
@@ -44,12 +50,13 @@
     <h1>随机逻辑实现</h1>
     <div class="button-row">
         <button onclick="runZero()">随机生成1-100（不重复）</button>
+        <button onclick="resetVis()">复位（清除随机记录）</button></div>
+    <div class="button-row">
         <button onclick="runOne()">随机排列1-4</button>
-        <button onclick="runTwo()">随机分队</button>
-        <button onclick="clearResult()">隐藏结果</button>
+        <button onclick="runTwo()">随机分队(在下面添加和删除名字)</button>
     </div>
-    <div class="action-section">
-        <button onclick="resetVis()">复位（清除随机记录）</button>
+    <div class="button-row">
+        <button onclick="clearResult()">隐藏随机结果</button>
     </div>
     <div class="action-section">
         <div class="input-group">
@@ -62,12 +69,19 @@
     </div>
     <div id="result">结果将显示在这里</div>
 
+    <!-- 返回首页的按钮 -->
+    <div class="action-section">
+        <a href="../index.html">
+            <button>返回首页</button>
+        </a>
+    </div>
+
     <script>
         // 逻辑 0：标记数组，避免重复数字
         const vis = new Array(101).fill(false);
 
         // 逻辑 2：名字数组
-        let names = ["赵锦嘉", "饶翰宸", "谭棋文", "林鑫", "赵烜", "许加欢", "贺俊杰", "秦心叶", "廖静怡", "林利"];
+        let names = []//["赵锦嘉", "饶翰宸", "谭棋文", "林鑫", "赵烜", "许加欢", "贺俊杰", "秦心叶", "廖静怡", "林利"];
 
         // 逻辑 0：随机生成 1-100，不重复
         function runZero() {
