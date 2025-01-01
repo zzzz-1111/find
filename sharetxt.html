@@ -1,74 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Share Text</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
+                console.error('Error fetching texts:', error);
+            }
         }
-        input, button {
-            font-size: 16px;
-            padding: 10px;
-            margin: 5px;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        li {
-            margin: 5px 0;
-            padding: 10px;
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-        }
-        .remove-btn {
-            background-color: red;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            margin-left: 10px;
-            cursor: pointer;
-        }
-        .remove-btn:hover {
-            background-color: darkred;
-        }
-    </style>
-</head>
-<body>
-    <h1>Share Information</h1>
-    <div>
-        <input type="text" id="textInput" placeholder="Enter your text here">
-        <button onclick="addText()">Add</button>
-    </div>
-    <ul id="textList"></ul>
 
-    <script>
-        const textList = document.getElementById("textList");
+        // Function to add text to LeanCloud
+        async function addText() {
+            const textInput = document.getElementById('textInput');
+            const text = textInput.value.trim();
 
-        function addText() {
-            const input = document.getElementById("textInput");
-            const text = input.value.trim();
-            if (text === "") {
-                alert("Please enter some text.");
+            if (text === '') {
+                alert('Please enter some text!');
                 return;
             }
 
-            const listItem = document.createElement("li");
-            listItem.textContent = text;
+            const TextObject = AV.Object.extend('SharedText');
+            const newText = new TextObject();
+            newText.set('text', text);
 
-            const removeBtn = document.createElement("button");
-            removeBtn.textContent = "Remove";
-            removeBtn.className = "remove-btn";
-            removeBtn.onclick = () => textList.removeChild(listItem);
-
-            listItem.appendChild(removeBtn);
-            textList.appendChild(listItem);
-            input.value = "";
+            try {
+                await newText.save();
+                textInput.value = '';
+                fetchTexts();
+            } catch (error) {
+                console.error('Error saving text:', error);
+            }
         }
+
+        // Function to delete text from LeanCloud
+        async function deleteText(objectId) {
+            const object = AV.Object.createWithoutData('SharedText', objectId);
+            try {
+                await object.destroy();
+                fetchTexts();
+            } catch (error) {
+                console.error('Error deleting text:', error);
+            }
+        }
+
+        // Fetch initial data
+        fetchTexts();
     </script>
 </body>
 </html>
