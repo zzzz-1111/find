@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Text</title>
+    <!-- 引入正确的 LeanCloud SDK -->
+    <script src="https://unpkg.com/browse/leancloud-storage@4.15.2/dist/av-core.js" defer></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        textarea {
+            width: 80%;
+            height: 100px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Shared Text</h1>
+
+    <textarea id="textInput" placeholder="Enter your text here..."></textarea>
+    <br>
+    <button onclick="addText()">Add Text</button>
+
+    <h2>Shared Information</h2>
+    <ul id="textList"></ul>
+
+    <script type="module">
+    import AV from 'https://unpkg.com/browse/leancloud-storage@4.15.2/dist/av-core.js';
+
+        // 初始化 LeanCloud
+        AV.init({
+    appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+    appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+    serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+});
+
+        // 获取数据的函数
+        async function fetchTexts() {
+            const query = new AV.Query('SharedText');
+            try {
+                const results = await query.find();
+                const textList = document.getElementById('textList');
+                textList.innerHTML = '';  // 清空现有的文本列表
+
+                results.forEach(result => {
+                    const text = result.get('text');
+                    const li = document.createElement('li');
+                    li.textContent = text;
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.className = 'delete';
+                    deleteButton.onclick = () => deleteText(result.id);
+
+                    li.appendChild(deleteButton);
+                    textList.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error fetching texts:', error);
+                alert(`Error fetching texts: ${error.message}`);
+            }
+        }
+
+        // 添加文本到 LeanCloud
+        async function addText() {
+            const textInput = document.getElementById('textInput');
+            const text = textInput.value.trim();
+
+            if (text === '') {
+                alert('Please enter some text!');
+                return;
+            }
+
+            const TextObject = AV.Object.extend('SharedText');
+            const newText = new TextObject();
+            newText.set('text', text);
+
+            try {
+                await newText.save();
+                textInput.value = '';  // 清空输入框
+                fetchTexts();  // 更新文本列表
+            } catch (error) {
+                console.error('Error saving text:', error);
+                alert(`Error saving text: ${error.message}`);
+            }
+        }
+
+        // 删除文本
+        async function deleteText(objectId) {
+            const object = AV.Object.createWithoutData('SharedText', objectId);
+            try {
+                await object.destroy();
+                fetchTexts();
+            } catch (error) {
+                console.error('Error deleting text:', error);
+                alert(`Error deleting text: ${error.message}`);
+            }
+        }
+
+        // 获取初始数据
+        fetchTexts();
+    </script>
+</body>
+</html>

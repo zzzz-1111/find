@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Text</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        textarea {
+            width: 80%;
+            height: 100px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>共享文本</h1>
+
+    <textarea id="textInput" placeholder="输入你的文本..."></textarea>
+    <br>
+    <button onclick="addText()">添加文本</button>
+
+    <h2>共享信息</h2>
+    <ul id="textList"></ul>
+
+    <!-- 引入打包后的 JavaScript -->
+    <script src="../dist/shareText.js"></script> <!-- 这里引入你的打包后的 main.js -->
+</body>
+</html>
