@@ -7,12 +7,17 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 10px;
+            margin: 0;
             background-image: url('../resource/bg.png'); /* 设置背景图像 */
             background-size: cover; /* 背景图像会裁切以覆盖整个屏幕 */
             background-position: center; /* 背景居中 */
             background-repeat: no-repeat; /* 背景图像不重复 */
             min-height: 100vh; /* 保证最小高度为视口高度 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center; /* 居中所有内容 */
+            text-align: center; /* 使文本居中 */
         }
         textarea {
             width: 80%;
@@ -20,14 +25,17 @@
             margin: 10px 0;
         }
         button {
-            padding: 10px 20px;
-            margin: 5px;
+            padding: 8px 18px;
+            margin: 10px 0;
             font-size: 16px;
             cursor: pointer;
         }
         ul {
             list-style-type: none;
             padding: 0;
+            text-align: left; /* 列表项文本左对齐 */
+            width: 80%; /* 设置宽度，以便对齐 */
+            margin: 0 auto;
         }
         li {
             margin: 5px 0;
@@ -41,6 +49,11 @@
             border: none;
             padding: 5px 10px;
             cursor: pointer;
+        }
+        .action-section {
+            margin-top: 15px;
+            text-align: left; /* 保持返回按钮左对齐 */
+            width: 80%; /* 设置宽度 */
         }
     </style>
 </head>
@@ -56,7 +69,6 @@
 
     <!-- 引入打包后的 JavaScript -->
     <script src="../dist/shareText.js"></script> <!-- 这里引入你的打包后的 main.js -->
-    
 
     <!-- 返回首页的按钮 -->
     <div class="action-section">
