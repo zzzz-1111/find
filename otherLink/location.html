@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Notification App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        input, button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            width: 80%;
+        }
+        button {
+            cursor: pointer;
+        }
+        #locationList span {
+            display: inline-block;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>随机通知应用</h1>
+
+    <!-- 输入框和保存按钮 -->
+    <div>
+        <input type="text" id="locationInput" placeholder="输入地点">
+        <button onclick="saveLocation()">保存地点</button>
+    </div>
+
+    <!-- 显示所有地点 -->
+    <h2>已保存的地点</h2>
+    <div id="locationList"></div>
+
+    <!-- 设置时间和次数 -->
+    <div>
+        <input type="number" id="timeInput" placeholder="输入时间（秒）">
+        <input type="number" id="timesInput" placeholder="输入通知次数">
+        <button onclick="startNotifications()">开始</button>
+    </div>
+
+    <script src="../dist/location.js"></script>
+</body>
+</html>
