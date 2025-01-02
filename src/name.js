@@ -9,7 +9,7 @@ AV.init({
 
 let userName = null;
 
-// Prompt user to enter a name
+// Prompt user to enter a name when the page loads
 window.addEventListener('load', async () => {
     userName = prompt('Please enter your name:');
     if (!userName) {
@@ -18,12 +18,14 @@ window.addEventListener('load', async () => {
     }
 
     try {
-        // Save the user's name in LeanCloud
+        // Save the user's name to LeanCloud
         const User = AV.Object.extend('User');
         const userObject = new User();
         userObject.set('name', userName);
         await userObject.save();
-        refreshUserList();
+
+        // Refresh the user list to display all users
+        await refreshUserList();
     } catch (error) {
         console.error('Error saving user:', error);
     }
@@ -44,7 +46,7 @@ async function startGame() {
 
         // Broadcast messages to all users
         userNames.forEach((name, index) => {
-            alert(`To ${name}: 你是 ${userNames[index]}, 分配到的数字是 ${numbers[index]}`);
+            alert(`To ${name}: 你是 ${name}, 分配到的数字是 ${numbers[index]}`);
         });
     } catch (error) {
         console.error('Error starting game:', error);
@@ -65,7 +67,7 @@ async function refreshUserList() {
         const query = new AV.Query('User');
         const users = await query.find();
 
-        const userList = document.getElementById('userList');
+        const userList = document.getElementById('userListContent'); // Correct element ID
         userList.innerHTML = ''; // Clear existing list
 
         users.forEach(user => {
