@@ -1,74 +1,58 @@
 import AV from 'leancloud-storage';
 
-// Initialize LeanCloud
+// 初始化 LeanCloud
 AV.init({
     appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
     appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
     serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
 });
 
+// 定义全局变量
 let userName = null;
+let currentUserObjectId = null;
 
-// Prompt user to enter a name when the page loads
+// 页面加载时提示输入用户名并保存到 LeanCloud
 window.addEventListener('load', async () => {
     userName = prompt('Please enter your name:');
     if (!userName) {
         alert('Name is required!');
-        return;
+        throw new Error('Name is required!');
     }
 
-    try {
-        // Save the user's name to LeanCloud
-        const User = AV.Object.extend('User');
-        const userObject = new User();
-        userObject.set('name', userName);
-        await userObject.save();
+    await saveUserToCloud();
+    await refreshUserList();
+});
 
-        // Refresh the user list to display all users
-        await refreshUserList();
+// 保存用户到 `uusser` 表
+async function saveUserToCloud() {
+    const Uusser = AV.Object.extend('uusser');
+    const userObject = new Uusser();
+    userObject.set('name', userName);
+
+    try {
+        const savedUser = await userObject.save();
+        console.log('User saved successfully:', savedUser);
+        currentUserObjectId = savedUser.id; // 记录 objectId 用于退出时删除
     } catch (error) {
         console.error('Error saving user:', error);
     }
-});
-
-// Handle the "start" button click
-async function startGame() {
-    try {
-        // Fetch all logged-in users
-        const query = new AV.Query('User');
-        const users = await query.find();
-
-        const userNames = users.map(user => user.get('name'));
-
-        // Randomly assign numbers 1 to n (n = total users)
-        const numbers = Array.from({ length: userNames.length }, (_, i) => i + 1);
-        shuffle(numbers);
-
-        // Broadcast messages to all users
-        userNames.forEach((name, index) => {
-            alert(`To ${name}: 你是 ${name}, 分配到的数字是 ${numbers[index]}`);
-        });
-    } catch (error) {
-        console.error('Error starting game:', error);
-    }
 }
 
-// Shuffle an array (Fisher-Yates algorithm)
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-
-// Refresh the user list
+// 查询并显示所有用户
 async function refreshUserList() {
-    try {
-        const query = new AV.Query('User');
-        const users = await query.find();
+    const query = new AV.Query('uusser');
 
-        const userList = document.getElementById('userListContent'); // Correct element ID
-        userList.innerHTML = ''; // Clear existing list
+    try {
+        const users = await query.find();
+        console.log('Fetched users:', users);
+
+        const userList = document.getElementById('userList');
+        if (!userList) {
+            console.error('No user list element found in the DOM!');
+            return;
+        }
+
+        userList.innerHTML = ''; // 清空列表
 
         users.forEach(user => {
             const li = document.createElement('li');
@@ -76,9 +60,61 @@ async function refreshUserList() {
             userList.appendChild(li);
         });
     } catch (error) {
-        console.error('Error fetching user list:', error);
+        console.error('Error fetching users:', error);
     }
 }
 
-// Event listener for the "start" button
-document.getElementById('startButton').addEventListener('click', startGame);
+// 广播消息给所有用户，并分配唯一数字
+async function sendMessageToAll() {
+    const query = new AV.Query('uusser');
+
+    try {
+        const users = await query.find();
+        if (users.length === 0) {
+            alert('No users to broadcast!');
+            return;
+        }
+
+        const userNames = users.map(user => user.get('name'));
+        const numbers = Array.from({ length: userNames.length }, (_, i) => i + 1);
+
+        // 打乱数字顺序（Fisher-Yates shuffle）
+        shuffle(numbers);
+
+        // 广播消息
+        userNames.forEach((name, index) => {
+            alert(`To ${name}: 你是 ${name}，分配的数字是 ${numbers[index]}`);
+        });
+
+        console.log('Broadcast completed successfully.');
+    } catch (error) {
+        console.error('Error broadcasting message:', error);
+    }
+}
+
+// 打乱数组的顺序
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+// 页面关闭时删除用户记录
+window.addEventListener('beforeunload', async () => {
+    if (currentUserObjectId) {
+        try {
+            const query = new AV.Query('uusser');
+            const user = await query.get(currentUserObjectId);
+            if (user) {
+                await user.destroy();
+                console.log('User deleted successfully:', currentUserObjectId);
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error);
+        }
+    }
+});
+
+// 页面按钮操作：广播消息
+document.getElementById('startButton').addEventListener('click', sendMessageToAll);
