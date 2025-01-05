@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倒计时与时间管理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+        }
+        #countdown {
+            font-size: 1.5em;
+            color: #555;
+            margin-top: 20px;
+        }
+        input {
+            padding: 10px;
+            font-size: 1em;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>倒计时与时间管理</h1>
+    <input type="number" id="secondsInput" placeholder="输入秒数" min="1">
+    <br>
+    <button id="startButton">Start</button>
+    <button id="removeButton">Remove</button>
+    <div id="countdown">加载中...</div>
+
+    <script type="module" src="../dist/mytime.js"></script>
+</body>
+</html>

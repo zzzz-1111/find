@@ -3,5 +3,5 @@
 git add .
 git commit -m "你的提交信息"
 
-parcel build src/location.js --out-dir dist --out-file location.js
+parcel build src/mytime.js --out-dir dist --out-file mytime.js
 python -m http.server 8000
