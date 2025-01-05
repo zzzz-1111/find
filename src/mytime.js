@@ -17,6 +17,7 @@ const countdownDisplay = document.getElementById('countdown');
 const alertSound = document.getElementById('alertSound');
 
 let countdownInterval;
+let initialTimeOffset; // 用于存储首次获取北京时间的时间戳
 
 // 清空 LeanCloud 数据
 async function clearLeanCloudData() {
@@ -38,13 +39,14 @@ async function getStoredTime() {
     return null;
 }
 
-// 从 TimeZoneDB 获取当前北京时间
-async function fetchCurrentTime() {
+// 从 TimeZoneDB 获取当前北京时间并记录初始偏移
+async function fetchInitialTime() {
     try {
         const response = await fetch(apiUrl);
         const data = await response.json();
         if (data && data.timestamp) {
-            return data.timestamp * 1000; // 转换为毫秒
+            initialTimeOffset = data.timestamp * 1000 - Date.now(); // 记录偏移值（毫秒）
+            return data.timestamp * 1000; // 返回北京时间（毫秒）
         } else {
             throw new Error('获取当前时间失败');
         }
@@ -54,14 +56,18 @@ async function fetchCurrentTime() {
     }
 }
 
+// 使用初始偏移值计算当前北京时间
+function getCurrentBeijingTime() {
+    return Date.now() + initialTimeOffset; // 当前时间 + 偏移值 = 北京时间
+}
+
 // 显示倒计时
-async function startCountdown(targetTime) {
+function startCountdown(targetTime) {
     clearInterval(countdownInterval);
 
-    countdownInterval = setInterval(async () => {
+    countdownInterval = setInterval(() => {
         try {
-            // 每次刷新倒计时时重新获取北京时间
-            const now = await fetchCurrentTime(); // 当前时间（毫秒）
+            const now = getCurrentBeijingTime(); // 使用偏移值计算当前时间
             const diff = targetTime - now; // 剩余时间（毫秒）
 
             if (diff <= 0) {
@@ -77,7 +83,7 @@ async function startCountdown(targetTime) {
             }
         } catch (error) {
             clearInterval(countdownInterval);
-            countdownDisplay.textContent = '倒计时更新失败，请检查网络连接';
+            countdownDisplay.textContent = '倒计时更新失败';
             console.error('倒计时刷新失败:', error);
         }
     }, 1000);
@@ -86,7 +92,7 @@ async function startCountdown(targetTime) {
 // 获取北京时间并加上秒数保存
 async function fetchBeijingTimeAndSave(seconds) {
     try {
-        const currentTimestamp = await fetchCurrentTime(); // 获取当前时间戳（毫秒）
+        const currentTimestamp = getCurrentBeijingTime(); // 使用初始偏移值计算当前时间
         const newTimestamp = currentTimestamp + seconds * 1000; // 加上秒数
         const newTime = new Date(newTimestamp);
 
@@ -116,18 +122,25 @@ async function removeLeanCloudData() {
 
 // 页面加载时检查 LeanCloud 数据
 async function initializeCountdown() {
-    const storedTime = await getStoredTime();
-    if (storedTime) {
-        const now = await fetchCurrentTime(); // 获取当前时间
-        const diff = storedTime - now; // 计算剩余时间
+    try {
+        await fetchInitialTime(); // 首次加载时从 TimeZoneDB 获取当前北京时间
 
-        if (diff > 0) {
-            startCountdown(storedTime.getTime());
+        const storedTime = await getStoredTime();
+        if (storedTime) {
+            const now = getCurrentBeijingTime(); // 使用初始偏移值计算当前时间
+            const diff = storedTime - now; // 计算剩余时间
+
+            if (diff > 0) {
+                startCountdown(storedTime.getTime());
+            } else {
+                countdownDisplay.textContent = '倒计时已结束，请重新设置时间。';
+            }
         } else {
-            countdownDisplay.textContent = '倒计时已结束，请重新设置时间。';
+            countdownDisplay.textContent = '请输入秒数并点击 Start。';
         }
-    } else {
-        countdownDisplay.textContent = '请输入秒数并点击 Start。';
+    } catch (error) {
+        countdownDisplay.textContent = '初始化失败，请刷新页面重试';
+        console.error('初始化失败:', error);
     }
 }
 
