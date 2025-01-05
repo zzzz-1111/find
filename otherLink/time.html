@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>获取北京时间</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+        }
+        #time {
+            font-size: 2em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>当前北京时间</h1>
+    <div id="time">加载中...</div>
+
+    <script>
+        function updateBeijingTime() {
+            // 创建一个新的 Date 对象，设置为北京时间（UTC+8）
+            const now = new Date();
+            const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+            const beijingTime = new Date(utc + 8 * 3600000);
+
+            // 格式化时间
+            const hours = String(beijingTime.getHours()).padStart(2, '0');
+            const minutes = String(beijingTime.getMinutes()).padStart(2, '0');
+            const seconds = String(beijingTime.getSeconds()).padStart(2, '0');
+
+            // 显示时间
+            document.getElementById('time').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        // 每秒更新一次时间
+        setInterval(updateBeijingTime, 1000);
+
+        // 初始化显示
+        updateBeijingTime();
+    </script>
+</body>
+</html>
