@@ -8,7 +8,7 @@ AV.init({
 });
 
 const apiKey = '68RUC9FIB396';
-const apiUrl = `http://api.timezonedb.com/v2.1/get-time-zone?key=${apiKey}&format=json&by=zone&zone=Asia/Shanghai`;
+const apiUrl = `https://api.timezonedb.com/v2.1/get-time-zone?key=${apiKey}&format=json&by=zone&zone=Asia/Shanghai`;
 
 const secondsInput = document.getElementById('secondsInput');
 const startButton = document.getElementById('startButton');
@@ -119,6 +119,11 @@ async function removeLeanCloudData() {
         alert('数据已删除');
     }
 }
+async function startLeanCloudData() {
+    if (confirm('确认重新开始吗？')) {
+        await clearLeanCloudData();
+    }
+}
 
 // 页面加载时检查 LeanCloud 数据
 async function initializeCountdown() {
@@ -157,6 +162,7 @@ startButton.addEventListener('click', async () => {
 });
 
 removeButton.addEventListener('click', removeLeanCloudData);
+startButton.addEventListener('click', startLeanCloudData);
 
 // 初始化页面
 initializeCountdown();
