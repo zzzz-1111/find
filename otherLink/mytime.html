@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>倒计时与时间管理</title>
+    <title>切换时间源</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,37 +15,40 @@
             color: #333;
         }
         #countdown {
-            font-size: 1.5em;
+            font-size: 2em;
             color: #555;
-            margin-top: 20px;
         }
-        input {
-            padding: 10px;
-            font-size: 1em;
-            margin: 10px 0;
+        .hidden {
+            display: none;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 1em;
-            margin: 5px;
-            cursor: pointer;
+        #settingsPanel {
+            padding: 20px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            width: 300px;
+            margin: 0 auto;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <h1>倒计时与时间管理</h1>
-    <input type="number" id="secondsInput" placeholder="输入秒数" min="1">
-    <br>
+    <h1>时间倒计时</h1>
+    <p id="countdown">加载中...</p>
+
+    <label for="secondsInput">输入秒数:</label>
+    <input type="number" id="secondsInput" />
     <button id="startButton">Start</button>
     <button id="removeButton">Remove</button>
-    <div id="countdown">加载中...</div>
+    <button id="settingsButton">设置</button>
 
-    <script type="module" src="../dist/mytime.js"></script>
-    
-    <div class="button">
-        <a href="../index.html">
-            <button>返回首页</button>
-        </a>
+    <div id="settingsPanel" class="hidden">
+        <h2>设置时间源</h2>
+        <p>当前时间源：<span id="currentTimeSource">正在加载...</span></p>
+        <button id="switchAPIButton">切换到 TimeZoneDB</button>
+        <button id="closeSettingsButton">关闭设置</button>
     </div>
+    <audio id="alertSound" src="../resource/alarm-beep-electronic-91914.mp3"></audio>
+
+    <script src="../dist/mytime.js"></script>
 </body>
 </html>

@@ -8,16 +8,23 @@ AV.init({
 });
 
 const apiKey = '68RUC9FIB396';
-const apiUrl = `https://api.timezonedb.com/v2.1/get-time-zone?key=${apiKey}&format=json&by=zone&zone=Asia/Shanghai`;
+const timeZoneDBUrl = `http://api.timezonedb.com/v2.1/get-time-zone?key=${apiKey}&format=json&by=zone&zone=Asia/Shanghai`;
+const nowApiUrl = 'https://sapi.k780.com/?app=life.time&appkey=75226&sign=fa340a9c0e85bd3567e6884d468e2f93&format=json';
 
 const secondsInput = document.getElementById('secondsInput');
 const startButton = document.getElementById('startButton');
 const removeButton = document.getElementById('removeButton');
 const countdownDisplay = document.getElementById('countdown');
 const alertSound = document.getElementById('alertSound');
+const settingsButton = document.getElementById('settingsButton');
+const settingsPanel = document.getElementById('settingsPanel');
+const switchAPIButton = document.getElementById('switchAPIButton');
+const closeSettingsButton = document.getElementById('closeSettingsButton');
+const currentTimeSource = document.getElementById('currentTimeSource');
 
 let countdownInterval;
 let initialTimeOffset; // 用于存储首次获取北京时间的时间戳
+let usingTimeZoneDB = true; // 默认使用 TimeZoneDB
 
 // 清空 LeanCloud 数据
 async function clearLeanCloudData() {
@@ -39,22 +46,36 @@ async function getStoredTime() {
     return null;
 }
 
-// 从 TimeZoneDB 获取当前北京时间并记录初始偏移
+// 获取当前时间戳（根据选中的 API）
 async function fetchInitialTime() {
     try {
-        const response = await fetch(apiUrl);
+        let url = usingTimeZoneDB ? timeZoneDBUrl : nowApiUrl;
+        const response = await fetch(url);
         const data = await response.json();
-        if (data && data.timestamp) {
-            initialTimeOffset = data.timestamp * 1000 - Date.now(); // 记录偏移值（毫秒）
-            return data.timestamp * 1000; // 返回北京时间（毫秒）
+
+        if (usingTimeZoneDB) {
+            if (data && data.status === 'OK' && data.timestamp) {
+                const adjustedTimestamp = data.timestamp - 480 * 60; // 加上 480 分钟（8 小时），转换为北京时间（秒级时间戳）
+                initialTimeOffset = adjustedTimestamp * 1000 - Date.now(); // 记录偏移值（毫秒）
+                return adjustedTimestamp * 1000; // 返回北京时间（毫秒）
+            } else {
+                throw new Error('获取北京时间失败');
+            }
         } else {
-            throw new Error('获取当前时间失败');
+            if (data.success === '1' && data.result.timestamp) {
+                initialTimeOffset = data.result.timestamp * 1000 - Date.now(); // 记录偏移值（毫秒）
+                return data.result.timestamp * 1000; // 返回北京时间（毫秒）
+            } else {
+                throw new Error('获取北京时间失败');
+            }
         }
     } catch (error) {
         console.error('获取北京时间失败:', error);
         throw error;
     }
 }
+
+
 
 // 使用初始偏移值计算当前北京时间
 function getCurrentBeijingTime() {
@@ -119,16 +140,19 @@ async function removeLeanCloudData() {
         alert('数据已删除');
     }
 }
-async function startLeanCloudData() {
-    if (confirm('确认重新开始吗？')) {
-        await clearLeanCloudData();
-    }
+
+// 切换时间源
+function toggleAPI() {
+    usingTimeZoneDB = !usingTimeZoneDB; // 切换时间源
+    switchAPIButton.textContent = usingTimeZoneDB ? '切换到 NowAPI' : '切换到 TimeZoneDB';
+    currentTimeSource.textContent = usingTimeZoneDB ? 'TimeZoneDB' : 'NowAPI';
+    initializeCountdown(); // 重新初始化倒计时
 }
 
 // 页面加载时检查 LeanCloud 数据
 async function initializeCountdown() {
     try {
-        await fetchInitialTime(); // 首次加载时从 TimeZoneDB 获取当前北京时间
+        await fetchInitialTime(); // 首次加载时从选中的 API 获取当前北京时间
 
         const storedTime = await getStoredTime();
         if (storedTime) {
@@ -149,6 +173,16 @@ async function initializeCountdown() {
     }
 }
 
+// 打开设置面板
+function openSettingsPanel() {
+    settingsPanel.classList.remove('hidden');
+}
+
+// 关闭设置面板
+function closeSettingsPanel() {
+    settingsPanel.classList.add('hidden');
+}
+
 // 事件监听
 startButton.addEventListener('click', async () => {
     const seconds = parseInt(secondsInput.value, 10);
@@ -162,7 +196,9 @@ startButton.addEventListener('click', async () => {
 });
 
 removeButton.addEventListener('click', removeLeanCloudData);
-startButton.addEventListener('click', startLeanCloudData);
+settingsButton.addEventListener('click', openSettingsPanel);
+closeSettingsButton.addEventListener('click', closeSettingsPanel);
+switchAPIButton.addEventListener('click', toggleAPI);
 
 // 初始化页面
 initializeCountdown();
