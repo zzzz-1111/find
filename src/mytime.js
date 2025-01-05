@@ -8,7 +8,7 @@ AV.init({
 });
 
 const apiKey = '68RUC9FIB396';
-const timeZoneDBUrl = `http://api.timezonedb.com/v2.1/get-time-zone?key=${apiKey}&format=json&by=zone&zone=Asia/Shanghai`;
+const timeZoneDBUrl = `https://api.timezonedb.com/v2.1/get-time-zone?key=${apiKey}&format=json&by=zone&zone=Asia/Shanghai`;
 const nowApiUrl = 'https://sapi.k780.com/?app=life.time&appkey=75226&sign=fa340a9c0e85bd3567e6884d468e2f93&format=json';
 
 const secondsInput = document.getElementById('secondsInput');
