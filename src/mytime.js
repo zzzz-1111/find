@@ -14,6 +14,7 @@ const secondsInput = document.getElementById('secondsInput');
 const startButton = document.getElementById('startButton');
 const removeButton = document.getElementById('removeButton');
 const countdownDisplay = document.getElementById('countdown');
+const alertSound = document.getElementById('alertSound');
 
 let countdownInterval;
 
@@ -66,6 +67,9 @@ async function startCountdown(targetTime) {
             if (diff <= 0) {
                 clearInterval(countdownInterval);
                 countdownDisplay.textContent = '倒计时结束！';
+
+                // 播放音频提醒
+                alertSound.play();
             } else {
                 const minutes = Math.floor(diff / 60000); // 剩余分钟
                 const seconds = Math.floor((diff % 60000) / 1000); // 剩余秒
