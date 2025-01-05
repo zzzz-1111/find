@@ -27,29 +27,23 @@
     <script>
         async function fetchBeijingTime() {
             try {
-                // 使用苏宁易购时间 API
-                const response = await fetch('https://f.m.suning.com/api/ct.do');
+                // 使用 TimeZoneDB API 获取北京时间
+                const apiKey = '68RUC9FIB396';  // 替换为你的 API 密钥
+                const url = `http://api.timezonedb.com/v2.1/get-time-zone?key=${apiKey}&format=json&by=zone&zone=Asia/Shanghai`;
+
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error('无法获取时间数据');
                 }
 
                 const data = await response.json();
-                console.log('API 响应数据:', data); // 输出完整的响应数据用于调试
+                console.log('API 响应数据:', data);  // 输出完整的响应数据用于调试
 
-                // 检查 currentTime 字段是否存在
-                if (data && data.currentTime) {
-                    const timestamp = parseInt(data.currentTime, 10); // 获取时间戳（毫秒）
-                    const datetime = new Date(timestamp);
-
-                    // 格式化时间
-                    const hours = String(datetime.getHours()).padStart(2, '0');
-                    const minutes = String(datetime.getMinutes()).padStart(2, '0');
-                    const seconds = String(datetime.getSeconds()).padStart(2, '0');
-
-                    // 显示时间
-                    document.getElementById('time').textContent = `${hours}:${minutes}:${seconds}`;
+                if (data.status === 'OK') {
+                    const time = data.formatted; // 获取格式化的时间
+                    document.getElementById('time').textContent = time;
                 } else {
-                    throw new Error('响应数据格式不正确或缺少 currentTime 字段');
+                    throw new Error('响应数据格式不正确');
                 }
             } catch (error) {
                 document.getElementById('time').textContent = '时间获取失败';
