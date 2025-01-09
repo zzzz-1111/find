@@ -4,7 +4,7 @@ import AV from 'leancloud-storage';
 AV.init({
     appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
     appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
-    serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+    serverURLs: 'http://a4o2wp8z.lc-cn-n1-shared.com',
 });
 
 // 保存地点到 LeanCloud
