@@ -26,7 +26,7 @@
     <form id="uploadForm" style="display: none;">
         <input type="file" id="fileInput" accept="image/*" required>
         <div class="image-preview" id="imagePreview"></div>
-        <button type="submit">上传</button>
+        <button type="submit" id="uploadButton">上传</button>
     </form>
     <p id="responseMessage" style="margin-top: 20px;"></p>
 
@@ -36,6 +36,7 @@
         const timerDisplay = document.getElementById('timer');
         const imagePreview = document.getElementById('imagePreview');
         const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
         let timer;
 
         // 倒计时逻辑
@@ -85,15 +86,19 @@
             const formData = new FormData();
             formData.append('key', 'chv_hk8l_b4e3a5f15c38c5eace95dd4f31c826706862c5711d157843350b40b1fdee9e86184567db07ee2e55ff3c5c2d000629e2593c43381d2598fdaf8d51172237f41b');
             formData.append('album_id', 'SK5pJ');
-            formData.append('title', 'axas');
+            // formData.append('title', 'axas');
             formData.append('source', fileInput.files[0]);
 
             try {
+                uploadButton.style.display = 'none'; // 隐藏上传按钮
+                document.getElementById('responseMessage').innerText = '正在上传，请稍候...';
+
                 await fetch('https://www.picgo.net/api/1/upload', {
                     method: 'POST',
                     mode: 'no-cors', // 保持 no-cors 模式
                     body: formData
                 });
+
                 document.getElementById('responseMessage').innerText = '文件上传请求已发送（无返回数据）。';
             } catch (error) {
                 console.error('上传文件时出错:', error);
