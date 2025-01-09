@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>切换时间源</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+        }
+        #countdown {
+            font-size: 2em;
+            color: #555;
+        }
+        .hidden {
+            display: none;
+        }
+        #settingsPanel {
+            padding: 20px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            width: 300px;
+            margin: 0 auto;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>时间倒计时</h1>
+    <p id="countdown">加载中...</p>
+
+    <label for="secondsInput">输入秒数:</label>
+    <input type="number" id="secondsInput" />
+    <button id="startButton">开始倒计时</button>
+    <button id="removeButton">清除记录</button>
+    <button id="settingsButton">设置</button>
+
+    <div id="settingsPanel" class="hidden">
+        <h2>设置时间源</h2>
+        <p>当前时间源：<span id="currentTimeSource">正在加载...</span></p>
+        <button id="switchAPIButton">切换到 TimeZoneDB</button>
+        <button id="closeSettingsButton">关闭设置</button>
+    </div>
+    <audio id="alertSound" src="../resource/alarm-beep-electronic-91914.mp3"></audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
+    
+    <script>
+        // LeanCloud 初始化
+        AV.init({
+            appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+            appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+            serverURLs: 'http://a4o2wp8z.lc-cn-n1-shared.com',
+        });
+
+        const secondsInput = document.getElementById("secondsInput");
+        const startButton = document.getElementById("startButton");
+        const removeButton = document.getElementById("removeButton");
+        const countdownDisplay = document.getElementById("countdown");
+        const alertSound = document.getElementById("alertSound");
+        const settingsButton = document.getElementById("settingsButton");
+        const settingsPanel = document.getElementById("settingsPanel");
+        const switchAPIButton = document.getElementById("switchAPIButton");
+        const closeSettingsButton = document.getElementById("closeSettingsButton");
+        const currentTimeSource = document.getElementById("currentTimeSource");
+
+        let countdownInterval;
+        let initialTimeOffset;
+        let usingTimeZoneDB = true;
+
+        const timeZoneDBUrl = 'https://api.timezonedb.com/v2.1/get-time-zone?key=68RUC9FIB396&format=json&by=zone&zone=Asia/Shanghai';
+        const nowApiUrl = 'https://sapi.k780.com/?app=life.time&appkey=75226&sign=fa340a9c0e85bd3567e6884d468e2f93&format=json';
+
+        async function fetchInitialTime() {
+            try {
+                const url = usingTimeZoneDB ? timeZoneDBUrl : nowApiUrl;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (usingTimeZoneDB && data.status === 'OK') {
+                    initialTimeOffset = data.timestamp * 1000 - Date.now();
+                    return data.timestamp * 1000;
+                } else if (data.success === '1') {
+                    initialTimeOffset = data.result.timestamp * 1000 - Date.now();
+                    return data.result.timestamp * 1000;
+                } else {
+                    throw new Error("获取北京时间失败");
+                }
+            } catch (error) {
+                console.error("获取北京时间失败:", error);
+                throw error;
+            }
+        }
+
+        function getCurrentBeijingTime() {
+            return Date.now() + initialTimeOffset;
+        }
+
+        async function saveTimeToLeanCloud(seconds) {
+            const currentTime = getCurrentBeijingTime();
+            const targetTime = currentTime + seconds * 1000;
+
+            const TimeData = AV.Object.extend('TimeData');
+            const timeData = new TimeData();
+            timeData.set('time', new Date(targetTime));
+            await timeData.save();
+
+            startCountdown(targetTime);
+        }
+
+        async function clearLeanCloudData() {
+            const query = new AV.Query('TimeData');
+            const results = await query.find();
+            for (const item of results) {
+                await item.destroy();
+            }
+        }
+
+        async function removeTimeData() {
+            if (confirm("确认清除记录吗？")) {
+                await clearLeanCloudData();
+                countdownDisplay.textContent = "还剩下：--:--";
+            }
+        }
+
+        function startCountdown(targetTime) {
+            clearInterval(countdownInterval);
+
+            countdownInterval = setInterval(() => {
+                const now = getCurrentBeijingTime();
+                const diff = targetTime - now;
+
+                if (diff <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownDisplay.textContent = "倒计时结束！";
+                    alertSound.play();
+                } else {
+                    const minutes = Math.floor(diff / 60000);
+                    const seconds = Math.floor((diff % 60000) / 1000);
+                    countdownDisplay.textContent = `还剩下：${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        function toggleAPI() {
+            usingTimeZoneDB = !usingTimeZoneDB;
+            currentTimeSource.textContent = usingTimeZoneDB ? "TimeZoneDB" : "NowAPI";
+        }
+
+        settingsButton.addEventListener('click', () => settingsPanel.classList.remove("hidden"));
+        closeSettingsButton.addEventListener('click', () => settingsPanel.classList.add("hidden"));
+        switchAPIButton.addEventListener('click', toggleAPI);
+
+        startButton.addEventListener('click', () => {
+            const seconds = parseInt(secondsInput.value, 10);
+            if (isNaN(seconds) || seconds <= 0) {
+                alert("请输入有效的秒数");
+                return;
+            }
+            saveTimeToLeanCloud(seconds);
+        });
+
+        removeButton.addEventListener('click', removeTimeData);
+
+        (async () => {
+            await fetchInitialTime();
+        })();
+    </script>
+</body>
+</html>

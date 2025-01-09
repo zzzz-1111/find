@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Cache</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .input-container {
+            margin-bottom: 20px;
+        }
+        .cached-entries {
+            margin-top: 20px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Input Cache</h1>
+    <div class="input-container">
+        <label for="input-text">Enter text:</label>
+        <input type="text" id="input-text">
+        <button onclick="saveInput()">Save</button>
+        <button onclick="clearCache()">Clear All</button>
+    </div>
+    <div class="cached-entries">
+        <h2>Cached Entries:</h2>
+        <ul id="cached-list"></ul>
+    </div>
+
+    <script>
+        // Load cached entries on page load
+        window.onload = function() {
+            loadCachedEntries();
+        };
+
+        function saveInput() {
+            const inputText = document.getElementById('input-text').value;
+            if (inputText.trim() !== "") {
+                // Retrieve existing cache from localStorage
+                let cachedEntries = JSON.parse(localStorage.getItem('cachedEntries')) || [];
+
+                // Add new input to cache
+                cachedEntries.push(inputText);
+
+                // Save updated cache to localStorage
+                localStorage.setItem('cachedEntries', JSON.stringify(cachedEntries));
+
+                // Update the displayed list
+                appendToList(inputText);
+
+                // Clear the input field
+                document.getElementById('input-text').value = "";
+            }
+        }
+
+        function loadCachedEntries() {
+            const cachedEntries = JSON.parse(localStorage.getItem('cachedEntries')) || [];
+            cachedEntries.forEach(entry => appendToList(entry));
+        }
+
+        function appendToList(entry) {
+            const list = document.getElementById('cached-list');
+            const listItem = document.createElement('li');
+            listItem.textContent = entry;
+            list.appendChild(listItem);
+        }
+
+        function clearCache() {
+            // Clear localStorage and the displayed list
+            localStorage.removeItem('cachedEntries');
+            document.getElementById('cached-list').innerHTML = "";
+        }
+    </script>
+</body>
+</html>
