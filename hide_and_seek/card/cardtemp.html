@@ -75,7 +75,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>道具管理</h1>
+        <h1>卡片管理</h1>
         <div id="titleDisplay"></div>
         <div id="contentDisplay"></div>
 
@@ -197,7 +197,6 @@
                             card.set('title', newTitle);
                             card.set('content', newContent);
                             await card.save();
-                            alert('数据已更新成功！');
                             location.reload(); // 保存后刷新页面
                         } catch (error) {
                             console.error('更新数据失败:', error);

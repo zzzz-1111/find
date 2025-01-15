@@ -75,7 +75,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>道具管理</h1>
+        <h1>卡片管理</h1>
         <div id="titleDisplay"></div>
         <div id="contentDisplay"></div>
 
@@ -98,7 +98,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
     <script>
-        const cardid = "374dwl";  // skip
+        const cardid = "vei95a";  // skip
 
         // 初始化 LeanCloud
         AV.init({
@@ -197,7 +197,6 @@
                             card.set('title', newTitle);
                             card.set('content', newContent);
                             await card.save();
-                            alert('数据已更新成功！');
                             location.reload(); // 保存后刷新页面
                         } catch (error) {
                             console.error('更新数据失败:', error);
