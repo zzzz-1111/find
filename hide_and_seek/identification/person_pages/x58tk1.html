@@ -96,6 +96,8 @@
         </div>
         <button id="uploadFile">上传文件</button>
         <div class="status-message" id="statusMessage"></div>
+        <!-- Logout Button -->
+        <button id="logoutButton" style="display: none;">登出</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
@@ -114,6 +116,7 @@
         const nameInputSection = document.getElementById('nameInputSection');
         const userInfoSection = document.getElementById('userInfoSection');
         const statusMessage = document.getElementById('statusMessage');
+        const logoutButton = document.getElementById('logoutButton');  // Logout button
 
         async function checkUserData() {
             try {
@@ -124,10 +127,12 @@
                 if (existingUser) {
                     displayedUserName.innerText = existingUser.get('name');
                     userInfoSection.style.display = 'block';
-                    document.getElementById('renameUser').style.display = 'block'; // 显示重命名按钮
+                    logoutButton.style.display = 'block'; // Show logout button
+                    document.getElementById('renameUser').style.display = 'block'; // Show rename button
                 } else {
                     nameInputSection.style.display = 'block';
-                    document.getElementById('renameUser').style.display = 'none'; // 隐藏重命名按钮
+                    logoutButton.style.display = 'none';  // Hide logout button
+                    document.getElementById('renameUser').style.display = 'none'; // Hide rename button
                 }
             } catch (error) {
                 console.error('查询用户数据失败:', error);
@@ -272,6 +277,25 @@
             } catch (error) {
                 console.error('上传失败:', error);
                 statusMessage.innerText = '上传失败，请重试。';
+            }
+        });
+        
+        // Logout user
+        logoutButton.addEventListener('click', async () => {
+            try {
+                const query = new AV.Query('person');
+                query.equalTo('uid', uid);
+                const person = await query.first();
+                if (person) {
+                    await person.destroy();  // 删除用户记录
+                    alert('用户已登出，记录已删除。');
+                    location.reload();  // 刷新页面
+                } else {
+                    alert('没有找到用户记录。');
+                }
+            } catch (error) {
+                console.error('登出失败:', error);
+                alert('登出失败，请稍后再试！');
             }
         });
     </script>
