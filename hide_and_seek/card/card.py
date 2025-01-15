@@ -7,7 +7,7 @@ def generate_uid():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
 
 # 创建 20 个 HTML 文件
-def create_html_files(num_files=20, output_dir="person_pages", template_file="cardtemp.html"):
+def create_html_files(num_files=30, output_dir="card_pages", template_file="cardtemp.html"):
     # 确保输出目录存在
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
