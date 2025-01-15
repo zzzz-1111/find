@@ -26,13 +26,13 @@ def process_html_files(directory, prefix, url_base, output_directory):
 
             # 在二维码上方添加文字
             draw = ImageDraw.Draw(qr_img)
-            font_size = 20
+            font_size = 50
             try:
                 font = ImageFont.truetype("arial.ttf", font_size)
             except IOError:
                 font = ImageFont.load_default()
 
-            text = "卡片"
+            text = "card"
             # 使用 textbbox 测量文字大小
             text_bbox = draw.textbbox((0, 0), text, font=font)
             text_width = text_bbox[2] - text_bbox[0]
