@@ -1,0 +1,112 @@
+1. 个人标识，打开后要求输入名字，将名字缓存到本地，然后将名字上传到leancloud的person类里（name变量）；另外还有一个uid变量，设置为"3zsax5"
+sdk为    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
+下面是一些可能用到的信息。    
+AV.init({
+    appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+    appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+    serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+});
+
+添加功能：1.不需要显示给用户它的uid 2.打开后先检查是否存在云端uid相同的数据，如果存在的话直接加载 3. 添加重命名按钮，可以修改云端的name 4. 添加抓捕按钮，点击之后可以显示一个输入框输入名字(Arrester)，一个上传功能；上传参考以下代码，不过不用倒计时，另外要检查文件不大于25Mb
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传文件示例</title>
+    <style>
+        #timer {
+            font-size: 20px;
+            color: red;
+            margin-top: 10px;
+        }
+        .image-preview img {
+            max-width: 100px;
+            max-height: 100px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>上传文件到 PicGo</h1>
+    <button id="startTimer">开始倒计时</button>
+    <p id="timer"></p>
+    <form id="uploadForm" style="display: none;">
+        <input type="file" id="fileInput" accept="*" required>
+        <div class="image-preview" id="imagePreview"></div>
+        <button type="submit" id="uploadButton">上传</button>
+    </form>
+    <p id="responseMessage" style="margin-top: 20px;"></p>
+
+    <script>
+        const startTimerButton = document.getElementById('startTimer');
+        const uploadForm = document.getElementById('uploadForm');
+        const timerDisplay = document.getElementById('timer');
+        const imagePreview = document.getElementById('imagePreview');
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        let timer;
+
+        // 文件选择后显示缩略图
+        fileInput.addEventListener('change', () => {
+            imagePreview.innerHTML = ''; // 清空之前的预览
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    imagePreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 上传逻辑
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!fileInput.files.length) {
+                alert('请选择要上传的文件。');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('key', 'chv_hk8l_b4e3a5f15c38c5eace95dd4f31c826706862c5711d157843350b40b1fdee9e86184567db07ee2e55ff3c5c2d000629e2593c43381d2598fdaf8d51172237f41b');
+            formData.append('album_id', 'SK5pJ');
+            // formData.append('title', 'axas');
+            formData.append('source', fileInput.files[0]);
+
+            try {
+                uploadButton.style.display = 'none'; // 隐藏上传按钮
+                document.getElementById('responseMessage').innerText = '正在上传，请稍候...';
+
+                await fetch('https://www.picgo.net/api/1/upload', {
+                    method: 'POST',
+                    mode: 'no-cors', // 保持 no-cors 模式
+                    body: formData
+                });
+
+                document.getElementById('responseMessage').innerText = '文件上传请求已发送（无返回数据）。';
+            } catch (error) {
+                console.error('上传文件时出错:', error);
+                document.getElementById('responseMessage').innerText = '发生错误，请重试。';
+            }
+        });
+
+    </script>
+</body>
+</html>
+上传需修改文件名，查询leancloud上Round类里的times信息，然后文件名格式为"Round{A}_out_{B}_{C}",A为times的信息，B为该二维码uid对应的用户的name，C为Arrester。
+然后发送leancloud上myLog类，content写“A已被B抓获”，A为该二维码uid对应的用户的name，B为Arrester。
+
+
+2. 道具，写一个网页满足以下功能，首先有一个cardid标识这个网页的信息，你设置它为随机一个6位由字母（小写）数字组成字符串。打开网页时，检查leancloud上card类是否有对应的信息（cardid）相同。如果没有的话，有两个输入框，第一个输入框输入title，第二个输入框输入content。输入的数据需要发送到card类。
+如果有的话，输入的title可以改变当前网页的标题，另外title需要用醒目的字体大小显示在网页正上方。content则显示在网页下面。
+
+帮我写一个python程序，创建二十个这样的网页，对于每个网页，随机生成6位uid（由小写字母与数字组成），然后网页命名为(uid).html（uid为这个网页特有的uid），然后修改网页内容中const uid = “”的部分uid需要与你生成的uid一致
+
+帮我写一个python程序，创建二十个这样的网页，对于每个网页，随机生成6位cardid（由小写字母与数字组成），然后网页命名为(cardid).html（uid为这个网页特有的cardid），然后修改网页内容中const cardid = “”的部分cardid需要与你生成的cardid一致

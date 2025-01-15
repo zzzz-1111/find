@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人标识</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
+  <style>
+    .image-preview img {
+      max-width: 100px;
+      max-height: 100px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div v-if="!isNameLoaded">
+      <h2>加载中，请稍候...</h2>
+    </div>
+    <div v-else-if="!name">
+      <h2>请输入你的名字</h2>
+      <input type="text" v-model="nameInput" placeholder="输入名字">
+      <button @click="saveName">提交</button>
+    </div>
+    <div v-else>
+      <h2>欢迎, {{ name }}!</h2>
+      <button @click="rename">重命名</button>
+      <button @click="capture">抓捕</button>
+    </div>
+
+    <div v-if="showCapture">
+      <h3>抓捕操作</h3>
+      <input type="text" v-model="arrester" placeholder="输入抓捕者名字">
+      <input type="file" id="fileInput" accept="*" @change="handleFile" />
+      <div class="image-preview" id="imagePreview"></div>
+      <button @click="uploadFile">上传文件</button>
+    </div>
+  </div>
+
+  <script>
+    AV.init({
+      appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+      appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+      serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+    });
+
+    new Vue({
+      el: '#app',
+      data: {
+        name: '',
+        uid: '3zsax5',
+        nameInput: '',
+        isNameLoaded: false,
+        showCapture: false,
+        arrester: '',
+        file: null,
+      },
+      async created() {
+        // 检查云端是否已有 UID 对应的用户
+        try {
+          const query = new AV.Query('person');
+          query.equalTo('uid', this.uid);
+          const result = await query.first();
+          if (result) {
+            this.name = result.get('name');
+          }
+          this.isNameLoaded = true;
+        } catch (error) {
+          console.error('加载用户数据失败:', error);
+        }
+      },
+      methods: {
+        async saveName() {
+          if (!this.nameInput.trim()) {
+            alert('名字不能为空！');
+            return;
+          }
+
+          try {
+            // 保存名字到 LeanCloud
+            const Person = AV.Object.extend('person');
+            const person = new Person();
+            person.set('name', this.nameInput);
+            person.set('uid', this.uid);
+            await person.save();
+
+            this.name = this.nameInput;
+            alert('名字已保存并上传成功！');
+          } catch (error) {
+            console.error('保存失败:', error);
+            alert('保存失败，请稍后再试！');
+          }
+        },
+        async rename() {
+          const newName = prompt('请输入新的名字', this.name);
+          if (!newName || newName.trim() === '') {
+            alert('名字不能为空！');
+            return;
+          }
+
+          try {
+            const query = new AV.Query('person');
+            query.equalTo('uid', this.uid);
+            const person = await query.first();
+            if (person) {
+              person.set('name', newName);
+              await person.save();
+              this.name = newName;
+              alert('重命名成功！');
+            } else {
+              alert('用户信息不存在！');
+            }
+          } catch (error) {
+            console.error('重命名失败:', error);
+            alert('重命名失败，请稍后再试！');
+          }
+        },
+        capture() {
+          this.showCapture = true;
+        },
+        handleFile(event) {
+          this.file = event.target.files[0];
+          if (this.file && this.file.size > 25 * 1024 * 1024) {
+            alert('文件大小不能超过 25MB');
+            this.file = null;
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('imagePreview').appendChild(img);
+          };
+          reader.readAsDataURL(this.file);
+        },
+        async uploadFile() {
+          if (!this.arrester.trim()) {
+            alert('抓捕者名字不能为空！');
+            return;
+          }
+
+          if (!this.file) {
+            alert('请选择文件！');
+            return;
+          }
+
+          try {
+            // 查询 Round 类中的 times 信息
+            const roundQuery = new AV.Query('Round');
+            const roundData = await roundQuery.first();
+            const times = roundData ? roundData.get('times') : 'Unknown';
+
+            // 动态生成文件名
+            const fileName = `Round${times}_out_${this.name}_${this.arrester}`;
+
+            const formData = new FormData();
+            formData.append('key', 'your-picgo-api-key');
+            formData.append('album_id', 'your-album-id');
+            formData.append('source', this.file);
+            formData.append('title', fileName);
+
+            // 上传文件
+            await fetch('https://www.picgo.net/api/1/upload', {
+              method: 'POST',
+              body: formData,
+            });
+
+            alert('文件上传成功！');
+
+            // 记录日志到 myLog
+            const Log = AV.Object.extend('myLog');
+            const log = new Log();
+            log.set('content', `${this.name} 已被 ${this.arrester} 抓获`);
+            await log.save();
+            alert('抓捕记录已保存！');
+          } catch (error) {
+            console.error('上传或记录失败:', error);
+            alert('操作失败，请稍后再试！');
+          }
+        },
+      },
+    });
+  </script>
+</body>
+</html>

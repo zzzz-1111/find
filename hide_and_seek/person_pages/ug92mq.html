@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理与文件上传</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .file-preview img {
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        .status-message {
+            margin-top: 15px;
+            font-size: 14px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>用户管理与文件上传</h1>
+        <div id="userInfoSection" style="display: none;">
+            <p>用户信息已找到：<span id="displayedUserName"></span></p>
+        </div>
+        <div id="nameInputSection" class="form-group" style="display: none;">
+            <label for="nameInput">请输入用户姓名：</label>
+            <input type="text" id="nameInput" placeholder="输入用户名">
+            <button id="saveName">保存用户信息</button>
+        </div>
+        <div class="form-group">
+            <button id="renameUser">重命名</button>
+        </div>
+        <div class="form-group">
+            <label for="arresterInput">请输入抓捕者姓名：</label>
+            <input type="text" id="arresterInput" placeholder="输入抓捕者姓名">
+        </div>
+        <div class="form-group">
+            <label for="fileInput">选择要上传的文件：</label>
+            <input type="file" id="fileInput" accept="*">
+            <div class="file-preview" id="filePreview"></div>
+        </div>
+        <button id="uploadFile">上传文件</button>
+        <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
+    <script>
+        const uid = "ug92mq";  // skip
+
+        AV.init({
+            appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+            appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+            serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+        });
+
+        const nameInput = document.getElementById('nameInput');
+        const displayedUserName = document.getElementById('displayedUserName');
+        const nameInputSection = document.getElementById('nameInputSection');
+        const userInfoSection = document.getElementById('userInfoSection');
+        const statusMessage = document.getElementById('statusMessage');
+
+        async function checkUserData() {
+            try {
+                const query = new AV.Query('person');
+                query.equalTo('uid', uid);
+                const existingUser = await query.first();
+
+                if (existingUser) {
+                    displayedUserName.innerText = existingUser.get('name');
+                    userInfoSection.style.display = 'block';
+                    document.getElementById('renameUser').style.display = 'block'; // 显示重命名按钮
+                } else {
+                    nameInputSection.style.display = 'block';
+                    document.getElementById('renameUser').style.display = 'none'; // 隐藏重命名按钮
+                }
+            } catch (error) {
+                console.error('查询用户数据失败:', error);
+                alert('查询用户数据时出错，请稍后重试。');
+            }
+        }
+        checkUserData();
+
+        document.getElementById('saveName').addEventListener('click', async () => {
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert('请输入用户名！');
+                return;
+            }
+
+            const query = new AV.Query('person');
+            query.equalTo('uid', uid);
+            const existingUser = await query.first();
+
+            if (existingUser) {
+                alert('用户已存在：' + existingUser.get('name'));
+            } else {
+                const person = new AV.Object('person');
+                person.set('uid', uid);
+                person.set('name', name);
+                await person.save();
+                alert('用户信息已保存！');
+                location.reload();  // 保存后刷新页面
+            }
+        });
+
+        document.getElementById('renameUser').addEventListener('click', async () => {
+            const newName = prompt('请输入新的名字', displayedUserName.innerText);
+            if (!newName || newName.trim() === '') {
+                alert('名字不能为空！');
+                return;
+            }
+
+            try {
+                const query = new AV.Query('person');
+                query.equalTo('uid', uid);
+                const person = await query.first();
+                if (person) {
+                    person.set('name', newName);
+                    await person.save();
+                    displayedUserName.innerText = newName;
+                    alert('重命名成功！');
+                } else {
+                    alert('用户信息不存在！');
+                }
+            } catch (error) {
+                console.error('重命名失败:', error);
+                alert('重命名失败，请稍后再试！');
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            filePreview.innerHTML = '';
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    filePreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function fetchRoundTimes() {
+            try {
+                const query = new AV.Query('Round');
+                const round = await query.first(); // 获取 Round 类中的第一条数据
+                if (round) {
+                    return round.get('times');  // 获取 times 字段
+                } else {
+                    console.error('没有找到 Round 数据');
+                    return 0;  // 如果没有找到 Round 数据，返回 0
+                }
+            } catch (error) {
+                console.error('查询 Round 类数据失败:', error);
+                return 0;  // 出现错误时返回 0
+            }
+        }
+
+        async function fetchUserName() {
+        try {
+            const query = new AV.Query('person');
+            query.equalTo('uid', uid);  // 根据 uid 查询 person 类
+            const user = await query.first(); // 获取匹配的第一条数据
+            if (user) {
+                return user.get('name');  // 获取 name 字段
+            } else {
+                console.error('没有找到对应的用户数据');
+                return '';  // 如果没有找到用户数据，返回空字符串
+            }
+        } catch (error) {
+            console.error('查询用户数据失败:', error);
+            return '';  // 出现错误时返回空字符串
+        }
+    }
+
+        document.getElementById('uploadFile').addEventListener('click', async () => {
+            const arrester = arresterInput.value.trim();
+            if (!arrester) {
+                alert('抓捕者姓名不能为空！');
+                return;
+            }
+
+            if (!fileInput.files.length) {
+                alert('请选择文件！');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (file.size > 25 * 1024 * 1024) {
+                alert('文件大小不能超过 25MB！');
+                return;
+            }
+
+            try {
+                statusMessage.innerText = '上传中，请稍候...';
+
+                const times = await fetchRoundTimes();
+                const name = await fetchUserName();
+                const fileName = `Round${times}_caught_${name}_${arrester}`;
+
+                const formData = new FormData();
+                formData.append('key', 'chv_hk8l_b4e3a5f15c38c5eace95dd4f31c826706862c5711d157843350b40b1fdee9e86184567db07ee2e55ff3c5c2d000629e2593c43381d2598fdaf8d51172237f41b');
+                formData.append('album_id', 'SK5pJ');
+                formData.append('source', file);
+                formData.append('title', fileName);
+
+                await fetch('https://www.picgo.net/api/1/upload', {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: formData,
+                });
+
+                statusMessage.innerText = '文件上传请求已发送（无返回数据）。';
+            } catch (error) {
+                console.error('上传失败:', error);
+                statusMessage.innerText = '上传失败，请重试。';
+            }
+        });
+    </script>
+</body>
+</html>
