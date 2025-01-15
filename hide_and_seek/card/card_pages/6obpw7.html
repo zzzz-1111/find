@@ -98,7 +98,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
     <script>
-        const cardid = "{cardid}";  // 替换为随机生成的 6 位字符串
+        const cardid = "6obpw7";  // skip
 
         // 初始化 LeanCloud
         AV.init({
@@ -157,18 +157,18 @@
                 alert('保存数据失败，请重试');
             }
         });
-
+        
         // 重置数据按钮点击事件
         document.getElementById('resetDataButton').addEventListener('click', async () => {
             try {
                 const query = new AV.Query('card');
                 query.equalTo('cardid', cardid);
-                const card = await query.first();
+                const existingCard = await query.first();
 
-                if (card) {
+                if (existingCard) {
                     // 显示表单，并填充默认数据
-                    const title = card.get('title');
-                    const content = card.get('content');
+                    const title = existingCard.get('title');
+                    const content = existingCard.get('content');
 
                     document.getElementById('titleInput').value = title;
                     document.getElementById('contentInput').value = content;
@@ -177,6 +177,33 @@
                     document.getElementById('titleDisplay').innerText = '';
                     document.getElementById('contentDisplay').innerText = '';
                     document.getElementById('resetDataButton').style.display = 'none';
+
+                    // 修改保存按钮点击事件，覆盖原有数据
+                    document.getElementById('saveDataButton').onclick = async () => {
+                        const newTitle = document.getElementById('titleInput').value.trim();
+                        const newContent = document.getElementById('contentInput').value.trim();
+
+                        if (!newTitle || !newContent) {
+                            alert('标题和内容不能为空！');
+                            return;
+                        }
+
+                        await existingCard.destroy();
+                        const Card = AV.Object.extend('card');
+                        const card = new Card();
+                        card.set('cardid', cardid);
+
+                        try {
+                            card.set('title', newTitle);
+                            card.set('content', newContent);
+                            await card.save();
+                            alert('数据已更新成功！');
+                            location.reload(); // 保存后刷新页面
+                        } catch (error) {
+                            console.error('更新数据失败:', error);
+                            alert('更新数据失败，请重试');
+                        }
+                    };
                 } else {
                     alert('未找到对应的卡片信息！');
                 }
