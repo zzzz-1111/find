@@ -60,9 +60,9 @@ def process_html_files(directory, prefix, url_base, output_directory):
             print(f"生成二维码: {output_path}")
 
 # 配置路径和参数
-html_directory = r".\person_pages"  # 替换为HTML文件所在的目录
+html_directory = r".\card_pages"  # 替换为HTML文件所在的目录
 prefix = '' # 替换为所需的前缀
-url_base = r"https://zzzz-1111.github.io/find/hide_and_seek/identification/person_pages/"  # 替换为URL基础地址
+url_base = r"https://zzzz-1111.github.io/find/hide_and_seek/card/card_pages/"  # 替换为URL基础地址
 output_directory = r"qr_output"  # 替换为二维码输出目录
 
 process_html_files(html_directory, prefix, url_base, output_directory)
