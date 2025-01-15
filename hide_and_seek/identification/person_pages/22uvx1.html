@@ -274,6 +274,12 @@
                 });
 
                 statusMessage.innerText = '文件上传请求已发送（无返回数据）。';
+                
+                const MyLog = AV.Object.extend('myLog');
+                const log = new MyLog();
+                log.set('content', `失败！${name}被${arrester}抓获`);
+                await log.save();
+                
             } catch (error) {
                 console.error('上传失败:', error);
                 statusMessage.innerText = '上传失败，请重试。';
