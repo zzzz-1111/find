@@ -32,7 +32,7 @@ def process_html_files(directory, prefix, url_base, output_directory):
             except IOError:
                 font = ImageFont.load_default()
 
-            text = "person"
+            text = "identification"
             # 使用 textbbox 测量文字大小
             text_bbox = draw.textbbox((0, 0), text, font=font)
             text_width = text_bbox[2] - text_bbox[0]
