@@ -165,6 +165,7 @@
 
         let userName = localStorage.getItem('userName');
         let currentTask = null; // 当前任务
+        let lstTask = null;
         let currentTaskEndTime;
         let countdownTimer;
 
@@ -198,6 +199,7 @@
             namePrompt.style.display = 'block';
             logoutButton.style.display = 'none';
             taskListDiv.style.display = 'none';
+            location.reload();
         });
 
         // 更新 avail 类，添加或删除自己的名字
@@ -339,7 +341,13 @@
             const log = new MyLog();
             log.set('content', `失败！任务 ${taskLocation} 未被 ${userName} 完成`);
             alert("失败！out");
-            window.location.href = "./over.html"; // 跳转到 out.html
+            lstTask = currentTask;
+            setTimeout(() => {
+                if (lstTask === currentTask)
+                {
+                    window.location.href = "./over.html"; // 跳转到 out.html
+                }
+            }, 3000); // 3000 毫秒 = 3 秒
             await log.save();
 
             updateAvail(userName, false);
