@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传文件到多吉云</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+        }
+        #uploadForm {
+            margin-top: 20px;
+        }
+        #fileInput {
+            margin: 10px 0;
+        }
+        #responseMessage {
+            margin-top: 20px;
+            font-size: 16px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>上传文件到多吉云</h1>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" required>
+        <button type="button" id="uploadButton">上传到多吉云</button>
+    </form>
+    <p id="responseMessage"></p>
+
+    <script>
+        const uploadButton = document.getElementById('uploadButton');
+        const fileInput = document.getElementById('fileInput');
+        const responseMessage = document.getElementById('responseMessage');
+
+        // 替换为您的多吉云 AccessKey、SecretKey 和存储桶名称
+        const accessKey = "08fa6ad453d56a14";
+        const secretKey = "5b361e97bb6f5d51211631d2d870149f";
+        const bucketName = "您的存储桶名称";
+        const apiEndpoint = `https://api.dogecloud.com/v1/storage/upload`;
+
+        // 点击上传按钮的事件处理程序
+        uploadButton.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+
+            if (!file) {
+                responseMessage.textContent = "请选择一个文件后再上传！";
+                responseMessage.style.color = "red";
+                return;
+            }
+
+            try {
+                responseMessage.textContent = "正在上传，请稍候...";
+                responseMessage.style.color = "blue";
+
+                // 生成 Token
+                const token = generateToken(accessKey, secretKey, bucketName);
+
+                // 创建表单数据
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("token", token);
+
+                // 发送 POST 请求
+                const response = await fetch(apiEndpoint, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    responseMessage.textContent = `上传成功！文件地址：${result.url}`;
+                    responseMessage.style.color = "green";
+                } else {
+                    responseMessage.textContent = "上传失败，请检查配置。";
+                    responseMessage.style.color = "red";
+                }
+            } catch (error) {
+                console.error("上传失败:", error);
+                responseMessage.textContent = "上传过程中发生错误，请稍后再试。";
+                responseMessage.style.color = "red";
+            }
+        });
+
+        // 模拟生成 Token 的函数（您需要用实际算法替换）
+        function generateToken(accessKey, secretKey, bucketName) {
+            // TODO: 使用服务器端签名或更安全的方式生成 Token
+            return `${accessKey}:${secretKey}:${bucketName}`;
+        }
+    </script>
+</body>
+</html>

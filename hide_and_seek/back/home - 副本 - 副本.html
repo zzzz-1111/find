@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务倒计时与文件上传</title>
+    <style>
+        .task-status {
+            font-size: 24px;
+            font-weight: bold;
+            color: red;
+            margin-bottom: 10px;
+        }
+        #timer {
+            font-size: 20px;
+            color: red;
+            margin-top: 10px;
+        }
+        .image-preview img {
+            max-width: 100px;
+            max-height: 100px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+        <style>
+            /* 页面整体样式 */
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f9f9f9;
+                color: #333;
+                margin: 0;
+                padding: 0;
+            }
+    
+            /* 任务列表样式 */
+            #tasksList {
+                list-style-type: none;
+                padding: 0;
+                margin: 20px auto;
+                max-width: 600px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                background-color: #fff;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+    
+            #tasksList li {
+                padding: 15px;
+                border-bottom: 1px solid #eee;
+                font-size: 16px;
+            }
+        </style>
+    
+</head>
+<body>
+    <h1>任务与文件上传</h1>
+    <div id="namePrompt">
+        <input type="text" id="nameInput" placeholder="请输入名称">
+        <button id="submitName">确认名称</button>
+    </div>
+    <button id="logoutButton" style="display:none;">登出</button>
+    <div id="taskList" style="display:none;">
+        <h2>任务列表</h2>
+        <ul id="tasks"></ul>
+        <p id="taskCountdown"></p>
+    </div>
+    <form id="uploadForm" style="display: none;">
+        <input type="file" id="fileInput" accept="" multiple required>
+        <div class="image-preview" id="imagePreview"></div>
+        <button type="submit" id="uploadButton">上传</button>
+    </form>
+</form>
+    <button id="uploadOtherImagesButton">上传其他好玩图片</button>
+    <input type="file" id="otherImageInput" multiple style="display: none;">
+    <p id="responseMessage" style="margin-top: 20px;"></p>
+
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.3.0/dist/av-min.js"></script>
+    <script>
+
+        // 获取新增的按钮和文件输入框
+        const uploadOtherImagesButton = document.getElementById('uploadOtherImagesButton');
+        const otherImageInput = document.getElementById('otherImageInput');
+
+        // 点击按钮时触发文件选择
+        uploadOtherImagesButton.addEventListener('click', () => {
+            otherImageInput.click();
+        });
+
+        // 文件选择后处理上传
+        otherImageInput.addEventListener('change', async () => {
+            if (otherImageInput.files.length === 0) {
+                alert('请选择文件后再上传！');
+                return;
+            }
+
+            if ([...otherImageInput.files].some(file => file.size > 25 * 1024 * 1024)) {
+                alert('文件大小不能超过25MB！');
+                return;
+            }
+
+            try {
+                // 上传每个文件
+                for (const file of otherImageInput.files) {
+                    const formData = new FormData();
+                    formData.append('key', 'chv_hk8l_b4e3a5f15c38c5eace95dd4f31c826706862c5711d157843350b40b1fdee9e86184567db07ee2e55ff3c5c2d000629e2593c43381d2598fdaf8d51172237f41b');
+                    formData.append('album_id', 'SK5pJ');
+                    formData.append('source', file);
+                    formData.append('title', file.name);
+
+                    // 请求上传接口
+                    await fetch('https://www.picgo.net/api/1/upload', {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: formData,
+                    });
+                }
+
+                alert('所有图片上传完成！');
+            } catch (error) {
+                alert('图片上传失败，请重试！');
+            }
+        });
+
+        // leanCloud
+        // 初始化LeanCloud
+        AV.init({
+            appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+            appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+            serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+        });
+
+        const namePrompt = document.getElementById('namePrompt');
+        const nameInput = document.getElementById('nameInput');
+        const submitNameButton = document.getElementById('submitName');
+        const logoutButton = document.getElementById('logoutButton');
+        const taskListDiv = document.getElementById('taskList');
+        const tasksList = document.getElementById('tasks');
+        const taskCountdownDisplay = document.getElementById('taskCountdown');
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const uploadButton = document.getElementById('uploadButton');
+        const responseMessage = document.getElementById('responseMessage');
+
+        let userName = localStorage.getItem('userName');
+        let currentTask = null; // 当前任务
+        let currentTaskEndTime;
+        let countdownTimer;
+
+        // 处理名称提交
+        submitNameButton.addEventListener('click', async () => {
+            const name = nameInput.value.trim();
+            if (name) {
+                try {
+                    const query = new AV.Query('person');
+                    query.equalTo('name', name);
+                    const results = await query.find();
+                    if (results.length > 0) {
+                        localStorage.setItem('userName', name);
+                        userName = name;
+                        namePrompt.style.display = 'none';
+                        logoutButton.style.display = 'inline-block';
+                        loadTasks();
+                    } else {
+                        alert('名称未在系统中找到！');
+                    }
+                } catch (error) {
+                    alert('获取数据失败，请重试');
+                }
+            }
+        });
+
+        // 登出功能
+        logoutButton.addEventListener('click', () => {
+            localStorage.removeItem('userName');
+            userName = null;
+            namePrompt.style.display = 'block';
+            logoutButton.style.display = 'none';
+            taskListDiv.style.display = 'none';
+        });
+
+        // 更新 avail 类，添加或删除自己的名字
+        async function updateAvail(name, add = true) {
+            try {
+                const availQuery = new AV.Query('avail');
+                availQuery.equalTo('name', name); // 查询当前用户的 avail 条目
+                const results = await availQuery.find();
+
+                if (add) {
+                    // 如果需要添加且不存在
+                    if (results.length === 0) {
+                        const Avail = AV.Object.extend('avail');
+                        const newAvail = new Avail();
+                        newAvail.set('name', name);
+                        await newAvail.save();
+                        console.log(`添加 ${name} 到 avail 成功`);
+                    } else {
+                        console.log(`${name} 已经在 avail 中`);
+                    }
+                } else {
+                    // 如果需要删除
+                    if (results.length > 0) {
+                        await results[0].destroy();
+                        console.log(`从 avail 中删除 ${name} 成功`);
+                    } else {
+                        console.log(`${name} 不在 avail 中`);
+                    }
+                }
+            } catch (error) {
+                console.error('更新 avail 时出错:', error);
+            }
+        }
+
+        // 加载任务
+        async function loadTasks() {
+            try {
+                const query = new AV.Query('tasks');
+                query.ascending('start'); // 按开始时间升序排列
+                const tasks = await query.find();
+                tasksList.innerHTML = ''; // 清空现有任务列表
+                currentTask = null;
+
+                const currentTime = new Date().getTime();
+                let nextTask = null;
+
+                for (const task of tasks) {
+                    const taskPerson = task.get('person');
+                    const taskStart = new Date(task.get('start')).getTime();
+                    const taskEnd = new Date(task.get('end')).getTime();
+                    const taskLocation = task.get('location');
+
+                    if (taskPerson === "rand") {
+                        // 如果是接头任务，并且当前时间在任务时间范围内
+                        if (currentTime >= taskStart && currentTime <= taskEnd) {
+                            console.error("rand");
+                            handleRendezvousTask(task, tasks); // 跳转到接头任务处理函数
+                            break; // 跳出循环
+                        }
+                    } else if (taskPerson === userName) {
+                        if (currentTime >= taskStart && currentTime <= taskEnd) {
+                            // 当前任务处理逻辑
+                            updateAvail(userName, false);
+                            processCurrentTask(task);
+                        } else if (currentTime > taskEnd) {
+                            // 删除过期任务并记录日志
+                            await handleExpiredTask(task, taskLocation);
+                        } else if (!nextTask && taskStart > currentTime) {
+                            // 记录下一个任务
+                            nextTask = task;
+                        }
+                    }
+                }
+
+                // 处理没有当前任务时的逻辑
+                handleNoCurrentTask(nextTask);
+
+                taskListDiv.style.display = 'block';
+            } catch (error) {
+                console.error('加载任务失败:', error);
+                alert('加载任务失败，请重试');
+            }
+        }
+        // 处理接头任务
+        async function handleRendezvousTask(task, tasks) {
+            const location = task.get('location');
+            const peopleNames = location.split(' '); // 从location解析出人名
+            const availQuery = new AV.Query('avail');
+            availQuery.containedIn('name', peopleNames);
+            const availPeople = await availQuery.find();
+            const allAvailPeople = await availQuery.find(); // 获取 avail 类中的所有记录
+            const availNames = allAvailPeople.map(person => person.get('name')); // 提取所有 avail 中的名字
+
+            // 找到 peopleNames 中前两个出现在 availNames 的名字
+            const matchedNames = [];
+            for (const name of peopleNames) {
+                if (availNames.includes(name)) {
+                    matchedNames.push(name);
+                    if (matchedNames.length === 2) break; // 找到前两个就退出
+                }
+            }
+
+            // 如果找到两个人
+            if (matchedNames.length === 2) {
+                const [per1, per2] = matchedNames;
+                console.error(per1, per2);
+                // 分别为每个人找到最近的一个未来任务
+                const futureTasksPer1 = tasks
+                    .filter(t => t.get('person') === per1 && new Date(t.get('start')).getTime() > new Date().getTime())
+                    .sort((a, b) => new Date(a.get('start')).getTime() - new Date(b.get('start')).getTime());
+
+                const futureTasksPer2 = tasks
+                    .filter(t => t.get('person') === per2 && new Date(t.get('start')).getTime() > new Date().getTime())
+                    .sort((a, b) => new Date(a.get('start')).getTime() - new Date(b.get('start')).getTime());
+
+                // 删除每个人的最近一个未来任务
+                if (futureTasksPer1.length > 0) {
+                    await futureTasksPer1[0].destroy();
+                }
+                if (futureTasksPer2.length > 0) {
+                    await futureTasksPer2[0].destroy();
+                }
+                console.error(per1, per2);      
+                // 检查当前用户是否是per1或per2
+                if ([per1, per2].includes(userName)) {
+                    const otherPerson = per1 === userName ? per2 : per1;
+                    task.set('location', otherPerson); // 将location改为另一个人
+                    task.set('person', userName); // 将person改为自己
+
+                    // 将更改同步到本地 tasks 列表
+                    const index = tasks.findIndex(t => t.id === task.id); // 找到对应 task 的索引
+                    if (index !== -1) {
+                        tasks[index] = task; // 替换为更新后的 task
+                    }
+
+                    // 将接头任务当作自己的正常任务处理
+                    processCurrentTask(task);
+                }
+            } else {
+                console.error('未找到足够的匹配人员');
+            }
+        }
+        // 处理当前任务
+        function processCurrentTask(task) {
+            const taskLocation = task.get('location');
+            const taskStart = task.get('start');
+            const taskEnd = task.get('end');
+
+            currentTask = task;
+            const taskDetails = `任务：${taskLocation}，开始：${formatTime(taskStart)}，结束：${formatTime(taskEnd)}`;
+            const listItem = document.createElement('li');
+            listItem.innerText = taskDetails;
+            tasksList.appendChild(listItem);
+
+            // 播放提醒声音
+            const audio = new Audio('../resource/alarm-beep-electronic-91914.mp3');
+            audio.play();
+
+            // 设置倒计时
+            currentTaskEndTime = new Date(taskEnd).getTime();
+            startTaskCountdown();
+        }
+
+        // 处理过期任务
+        async function handleExpiredTask(task, taskLocation) {
+            const MyLog = AV.Object.extend('myLog');
+            const log = new MyLog();
+            log.set('content', `失败！任务 ${taskLocation} 未被 ${userName} 完成`);
+            await log.save();
+
+            // 删除过期任务
+            await task.destroy();
+        }
+
+        // 处理没有当前任务时的逻辑
+        function handleNoCurrentTask(nextTask) {
+            if (!currentTask && nextTask) {
+                const nextTaskDetails = `下一个任务：${nextTask.get('location')}，开始时间：${formatTime(nextTask.get('start'))}`;
+                const listItem = document.createElement('li');
+                listItem.innerText = nextTaskDetails;
+                tasksList.appendChild(listItem);
+
+                // 设置下一个任务的倒计时
+                const nextTaskStartTime = new Date(nextTask.get('start')).getTime();
+                const countdownElement = document.createElement('p');
+                countdownElement.id = 'nextTaskCountdown';
+                tasksList.appendChild(countdownElement);
+
+                startNextTaskCountdown(nextTaskStartTime);
+            } else if (!currentTask) {
+                const noTaskMessage = document.createElement('li');
+                noTaskMessage.innerText = '当前没有进行中的任务，也没有安排下一个任务。';
+                tasksList.appendChild(noTaskMessage);
+            }
+        }
+
+        // 格式化时间，仅显示小时:分钟
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        // 开始下一个任务的倒计时
+        function startNextTaskCountdown(nextTaskStartTime) {
+            const countdownElement = document.getElementById('nextTaskCountdown');
+            const timer = setInterval(() => {
+                const currentTime = new Date().getTime();
+                const remainingTime = nextTaskStartTime - currentTime;
+
+                if (remainingTime <= 0) {
+                    clearInterval(timer);
+                    countdownElement.textContent = '下一个任务已开始！';
+                    loadTasks();
+                } else {
+                    const hours = Math.floor(remainingTime / (1000 * 60 * 60));
+                    const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+
+                    countdownElement.textContent = `距离下一个任务开始还有：${hours}小时 ${minutes}分钟 ${seconds}秒`;
+                }
+            }, 1000);
+        }
+
+        // 开始任务倒计时
+        function startTaskCountdown() {
+            countdownTimer = setInterval(() => {
+                const remainingTime = currentTaskEndTime - new Date().getTime();
+                if (remainingTime <= 0) {
+                    clearInterval(countdownTimer);
+                    taskCountdownDisplay.textContent = '任务已结束';
+                    updateAvail(userName, true);
+                    uploadForm.style.display = 'none'; // 结束后禁用上传功能
+                    loadTasks();
+                } else {
+                    const minutes = Math.floor(remainingTime / 60000);
+                    const seconds = Math.floor((remainingTime % 60000) / 1000);
+                    taskCountdownDisplay.textContent = `距离结束：${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+                    uploadForm.style.display = 'block'; // 任务期间显示上传功能
+                }
+            }, 1000);
+        }
+
+        // 定期检查任务列表，自动触发任务倒计时
+        setInterval(loadTasks, 30000); // 每1分钟重新加载任务列表
+        loadTasks()
+        // 文件选择后显示缩略图
+        fileInput.addEventListener('change', () => {
+            imagePreview.innerHTML = '';
+            for (let file of fileInput.files) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    imagePreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 上传文件
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (fileInput.files.length === 0) {
+                alert('请选择文件');
+                return;
+            }
+
+            if ([...fileInput.files].some(file => file.size > 25 * 1024 * 1024)) {
+                alert('文件大小不能超过25MB');
+                return;
+            }
+
+            responseMessage.innerText = '上传中，请稍等...';
+
+            async function fetchRoundTimes() {
+                try {
+                    const query = new AV.Query('Round');
+                    const round = await query.first(); // 获取 Round 类中的第一条数据
+                    if (round) {
+                        return round.get('times');  // 获取 times 字段
+                    } else {
+                        console.error('没有找到 Round 数据');
+                        return 0;  // 如果没有找到 Round 数据，返回 0
+                    }
+                } catch (error) {
+                    console.error('查询 Round 类数据失败:', error);
+                    return 0;  // 出现错误时返回 0
+                }
+            }
+            async function fetchMaxRoundTimes() {
+            try {
+                const query = await new AV.Query('Round');
+                query.descending('times'); // 按 times 字段降序排列
+                const round = await query.first(); // 获取 times 最大的一条数据
+                if (round) {
+                    return await round.get('times'); // 返回最大的 times 值
+                } else {
+                    console.error('没有找到 Round 数据');
+                    return 0; // 如果没有找到数据，返回 0
+                }
+            } catch (error) {
+                console.error('查询 Round 类数据失败:', error);
+                return 0; // 出现错误时返回 0
+            }
+        }
+            try {
+                for (const file of fileInput.files) {
+                    const formData = new FormData();
+                    formData.append('key', 'chv_hk8l_b4e3a5f15c38c5eace95dd4f31c826706862c5711d157843350b40b1fdee9e86184567db07ee2e55ff3c5c2d000629e2593c43381d2598fdaf8d51172237f41b');
+                    formData.append('album_id', 'SK5pJ');
+                    formData.append('source', file);
+                    const location = await currentTask ? currentTask.get('location') : 'unknown';
+                    const times = await fetchMaxRoundTimes();
+                    const fileName = `Round${times}_${userName}_get_${location}`;
+                    formData.append('title', fileName);
+
+                    // 请求上传接口
+                    await fetch('https://www.picgo.net/api/1/upload', {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: formData,
+                    });
+                }
+                // 遍历上传每个文件
+                // for (const file of fileInput.files) {
+                //     const formData = new FormData();
+                //     formData.append('key', 'chv_hk8l_b4e3a5f15c38c5eace95dd4f31c826706862c5711d157843350b40b1fdee9e86184567db07ee2e55ff3c5c2d000629e2593c43381d2598fdaf8d51172237f41b');
+                //     formData.append('album_id', 'SK5pJ');
+                //     formData.append('source', file);
+                //     fileName = generateFileName()
+                //     formData.append('title', fileName);
+                //     console.alert(fileName);
+
+                //     await fetch('https://www.picgo.net/api/1/upload', {
+                //         method: 'POST',
+                //         mode: 'no-cors',
+                //         body: formData,
+                //     });
+                // }
+
+                // 上传成功后记录日志到 myLog
+                if (currentTask) {
+                    const MyLog = AV.Object.extend('myLog');
+                    const log = new MyLog();
+                    log.set('person', userName);
+                    log.set('content', `成功！任务 ${currentTask.get('location')} 被 ${userName} 完成`);
+                    await log.save();
+
+                    // 删除任务
+                    await currentTask.destroy();
+
+                    // 刷新页面
+                    alert('文件上传成功！任务已完成！');
+                    updateAvail(userName, true);
+                    location.reload();
+                } else {
+                    responseMessage.innerText = '当前无有效任务，请检查任务列表。';
+                }
+            } catch (error) {
+                alert('文件上传失败，请重试');
+            }
+            loadTasks();
+        });
+
+        // 如果本地存储有名称，则直接加载任务
+        if (userName) {
+            loadTasks();
+            namePrompt.style.display = 'none';
+            logoutButton.style.display = 'inline-block';
+        }
+    </script>
+</body>
+</html>

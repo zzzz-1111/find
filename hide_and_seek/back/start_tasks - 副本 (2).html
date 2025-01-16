@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务设置与启动</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="number"], button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .menu {
+            margin-top: 20px;
+        }
+
+        #taskMenu {
+            display: none;
+        }
+
+        #statusMessage {
+            margin-top: 20px;
+            font-size: 14px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>任务设置与启动</h1>
+        <button id="settingsButton">设置</button>
+
+        <div id="taskMenu" class="menu">
+            <div class="form-group">
+                <label for="durationInput">输入时长（分钟）：</label>
+                <input type="number" id="durationInput" placeholder="输入时长">
+            </div>
+            <div class="form-group">
+                <label for="taskCountInput">输入任务数量 (m)：</label>
+                <input type="number" id="taskCountInput" placeholder="输入任务数量">
+            </div>
+            <div class="form-group">
+                <label for="taskDurationInput">输入任务时长（秒）：</label>
+                <input type="number" id="taskDurationInput" placeholder="输入任务时长">
+            </div>
+            <div class="form-group">
+                <label for="contactTaskInput">输入接头任务个数：</label>
+                <input type="number" id="contactTaskInput" placeholder="输入接头任务个数">
+            </div>
+            <div class="form-group">
+                <label for="readyTimeInput">准备时长（秒）：</label>
+                <input type="number" id="readyTimeInput" placeholder="输入准备时长">
+            </div>
+            <button id="startButton">启动任务</button>
+        </div>
+
+        <div id="statusMessage"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
+    <script>
+        AV.init({
+            appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+            appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+            serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+        });
+
+        const settingsButton = document.getElementById('settingsButton');
+        const taskMenu = document.getElementById('taskMenu');
+        const startButton = document.getElementById('startButton');
+        const statusMessage = document.getElementById('statusMessage');
+
+        const durationInput = document.getElementById('durationInput');
+        const taskCountInput = document.getElementById('taskCountInput');
+        const taskDurationInput = document.getElementById('taskDurationInput');
+        const contactTaskInput = document.getElementById('contactTaskInput');
+        const readyTimeInput = document.getElementById('readyTimeInput');
+
+        settingsButton.addEventListener('click', () => {
+            taskMenu.style.display = taskMenu.style.display === 'block' ? 'none' : 'block';
+        });
+
+        startButton.addEventListener('click', async () => {
+            const duration = parseInt(durationInput.value);
+            const m = parseInt(taskCountInput.value);
+            const taskDuration = parseInt(taskDurationInput.value);
+            const contactNumber = parseInt(contactTaskInput.value); // 新增联系任务数量
+
+            if (isNaN(duration) || isNaN(m) || isNaN(taskDuration) || isNaN(contactNumber)) {
+                alert('请确保所有输入框都有有效数字');
+                return;
+            }
+
+            // 显示确认弹窗
+            const userConfirmed = confirm('确定要删除 Tasks 表中的所有数据吗？此操作不可撤销！');
+            if (!userConfirmed) return;
+
+            try {
+                // 删除 Tasks 表中的所有数据
+                const tasks = await new AV.Query('tasks').find();
+                if (tasks.length > 0) await AV.Object.destroyAll(tasks);
+
+                statusMessage.innerText = '任务启动中，请稍候...';
+
+                const now = new Date();
+                const gameStartTime = now.getTime();
+                const gameEndTime = gameStartTime + duration * 60 * 1000;
+
+                // 获取参与人数和地点
+                const persons = await new AV.Query('person').find();
+                const n = persons.length;
+                const locations = await new AV.Query('Location').find();
+                const locaList = locations.map(location => location.get('name'));
+
+                const perLis = persons.map(person => person.get('name')); // 获取所有人员名称
+
+                // 定义随机任务生成和优化函数
+                async function generateAndOptimizeTasks() {
+                    const timeLis = Array.from({ length: n * m }, () =>
+                        gameStartTime + Math.random() * (gameEndTime - gameStartTime)
+                    ).sort((a, b) => a - b);
+
+                    let taskRequests = [];
+                    let lst = null;
+
+                    for (let i = 0; i < m; i++) {
+                        const timeGroup = timeLis.slice(i * n, (i + 1) * n);
+                        const groupPerLis = [...perLis];
+                        shuffle(groupPerLis);
+
+                        if (lst != null) {
+                            while (groupPerLis[0] === lst[n - 1]) shuffle(groupPerLis);
+                        }
+                        lst = groupPerLis;
+
+                        for (let j = 0; j < timeGroup.length; j++) {
+                            taskRequests.push({
+                                start: new Date(timeGroup[j]),
+                                end: new Date(timeGroup[j] + taskDuration * 1000),
+                                person: groupPerLis[j],
+                                location: locaList[Math.floor(Math.random() * locaList.length)],
+                            });
+                        }
+                    }
+
+                    // 筛选任务，确保间隔时间
+                    return taskRequests.reduce((validTasks, currentTask) => {
+                        const previousTask = validTasks.find(task => task.person === currentTask.person);
+                        if (!previousTask || currentTask.start - previousTask.end >= taskDuration * 1000) {
+                            validTasks.push(currentTask);
+                        }
+                        return validTasks;
+                    }, []);
+                }
+
+                // 重复生成和优化 5 次，取任务数量最多的一组
+                let bestTasks = [];
+                for (let i = 0; i < 5; i++) {
+                    const optimizedTasks = await generateAndOptimizeTasks();
+                    if (optimizedTasks.length > bestTasks.length) bestTasks = optimizedTasks;
+                }
+
+                // 插入 contactNumber 个特殊任务
+                const groupPerLis = [...perLis];
+                shuffle(groupPerLis);
+                const shuffledPerLis = groupPerLis.join(' '); // 将人员列表打乱并转换为字符串
+                let contactTasks = [];
+                for (let i = 0; i < contactNumber; i++) {
+                    const randomStart = gameStartTime + Math.random() * (gameEndTime - gameStartTime);
+                    const randomEnd = randomStart + taskDuration * 1000;
+
+                    contactTasks.push({
+                        start: new Date(randomStart),
+                        end: new Date(randomEnd),
+                        person: 'rand',
+                        location: shuffledPerLis,
+                    });
+                }
+
+                // 确保特殊任务间无重叠
+                contactTasks = contactTasks.filter((task, idx, arr) => {
+                    return idx === 0 || task.start - arr[idx - 1].end >= taskDuration * 1000;
+                });
+
+                // 合并普通任务和特殊任务
+                bestTasks = [...bestTasks, ...contactTasks];
+
+                // 上传任务到 LeanCloud
+                for (const taskData of bestTasks) {
+                    const Task = AV.Object.extend('tasks');
+                    const task = new Task();
+                    task.set('start', taskData.start);
+                    task.set('end', taskData.end);
+                    task.set('person', taskData.person);
+                    task.set('location', taskData.location);
+                    await task.save();
+                }
+
+                // 更新 Round 表
+                const rounds = await new AV.Query('Round').find();
+                const maxTimes = rounds.reduce(
+                    (max, round) => Math.max(max, round.get('times') || 0),
+                    0
+                );
+
+                const newRound = new AV.Object('Round');
+                newRound.set('times', maxTimes + 1);
+                newRound.set('start', now);
+                newRound.set('end', new Date(now.getTime() + duration * 60 * 1000));
+                await newRound.save();
+
+                // 记录日志
+                const Log = AV.Object.extend('myLog');
+                const log = new Log();
+                log.set('content', '游戏开始');
+                log.set('person', '自动程序');
+                await log.save();
+
+                statusMessage.innerText = '任务已成功发送到 LeanCloud，游戏已记录！';
+            } catch (error) {
+                console.error('任务创建失败:', error);
+                statusMessage.innerText = '任务创建失败，请重试！';
+            }
+        });
+
+        // 随机打乱数组
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+    </script>
+</body>
+</html>

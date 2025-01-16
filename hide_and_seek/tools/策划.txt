@@ -1,0 +1,539 @@
+1. 个人标识，打开后要求输入名字，将名字缓存到本地，然后将名字上传到leancloud的person类里（name变量）；另外还有一个uid变量，设置为"3zsax5"
+sdk为    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
+下面是一些可能用到的信息。    
+AV.init({
+    appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+    appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+    serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+});
+
+添加功能：1.不需要显示给用户它的uid 2.打开后先检查是否存在云端uid相同的数据，如果存在的话直接加载 3. 添加重命名按钮，可以修改云端的name 4. 添加抓捕按钮，点击之后可以显示一个输入框输入名字(Arrester)，一个上传功能；上传参考以下代码，不过不用倒计时，另外要检查文件不大于25Mb
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传文件示例</title>
+    <style>
+        #timer {
+            font-size: 20px;
+            color: red;
+            margin-top: 10px;
+        }
+        .image-preview img {
+            max-width: 100px;
+            max-height: 100px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>上传文件到 PicGo</h1>
+    <button id="startTimer">开始倒计时</button>
+    <p id="timer"></p>
+    <form id="uploadForm" style="display: none;">
+        <input type="file" id="fileInput" accept="*" required>
+        <div class="image-preview" id="imagePreview"></div>
+        <button type="submit" id="uploadButton">上传</button>
+    </form>
+    <p id="responseMessage" style="margin-top: 20px;"></p>
+
+    <script>
+        const startTimerButton = document.getElementById('startTimer');
+        const uploadForm = document.getElementById('uploadForm');
+        const timerDisplay = document.getElementById('timer');
+        const imagePreview = document.getElementById('imagePreview');
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        let timer;
+
+        // 文件选择后显示缩略图
+        fileInput.addEventListener('change', () => {
+            imagePreview.innerHTML = ''; // 清空之前的预览
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    imagePreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 上传逻辑
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!fileInput.files.length) {
+                alert('请选择要上传的文件。');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('key', 'chv_hk8l_b4e3a5f15c38c5eace95dd4f31c826706862c5711d157843350b40b1fdee9e86184567db07ee2e55ff3c5c2d000629e2593c43381d2598fdaf8d51172237f41b');
+            formData.append('album_id', 'SK5pJ');
+            // formData.append('title', 'axas');
+            formData.append('source', fileInput.files[0]);
+
+            try {
+                uploadButton.style.display = 'none'; // 隐藏上传按钮
+                document.getElementById('responseMessage').innerText = '正在上传，请稍候...';
+
+                await fetch('https://www.picgo.net/api/1/upload', {
+                    method: 'POST',
+                    mode: 'no-cors', // 保持 no-cors 模式
+                    body: formData
+                });
+
+                document.getElementById('responseMessage').innerText = '文件上传请求已发送（无返回数据）。';
+            } catch (error) {
+                console.error('上传文件时出错:', error);
+                document.getElementById('responseMessage').innerText = '发生错误，请重试。';
+            }
+        });
+
+    </script>
+</body>
+</html>
+上传需修改文件名，查询leancloud上Round类里的times信息，然后文件名格式为"Round{A}_out_{B}_{C}",A为times的信息，B为该二维码uid对应的用户的name，C为Arrester。
+然后发送leancloud上myLog类，content写“A已被B抓获”，A为该二维码uid对应的用户的name，B为Arrester。
+
+
+2. 道具，写一个网页满足以下功能，首先有一个cardid标识这个网页的信息，你设置它为随机一个6位由字母（小写）数字组成字符串。打开网页时，检查leancloud上card类是否有对应的信息（cardid）相同。如果没有的话，有两个输入框，第一个输入框输入title，第二个输入框输入content。输入的数据需要发送到card类。
+如果有的话，输入的title可以改变当前网页的标题，另外title需要用醒目的字体大小显示在网页正上方。content则显示在网页下面。
+
+帮我写一个python程序，创建二十个这样的网页，对于每个网页，随机生成6位uid（由小写字母与数字组成），然后网页命名为(uid).html（uid为这个网页特有的uid），然后修改网页内容中const uid = “”的部分uid需要与你生成的uid一致
+
+帮我写一个python程序，创建二十个这样的网页，对于每个网页，随机生成6位cardid（由小写字母与数字组成），然后网页命名为(cardid).html（uid为这个网页特有的cardid），然后修改网页内容中const cardid = “”的部分cardid需要与你生成的cardid一致
+
+3. 启动界面，点击设置按钮，显示一个菜单有一些选项。一个输入时长，一个输入任务数量(m)，一个输入任务时长，然后菜单也可以收起，有一个启动按钮，点击之后会发送一系列的信息到leancloud的tasks类。
+结束时间为现在时间+输入时长，从现在过后1min到结束前一个任务时长为游戏时间。先访问person类得知有多少人(n)在玩，然后在游戏时间内随机得到n*m个时间节点（形成列表timeLis，这是任务开始的时间，然后排序timeLis。
+拿出person里的所有name形成一个列表perLis。
+获得leancloud上Location类的所有记录，（name条目），为locaList
+然后遍历每个时间节点，以n个为一组，总计m组。对于每一组遍历时，随机打乱perLis，然后这一组的n个就可以与perLis的n个一一对应。然后发送leancloud请求，对于每个时间节点（设在这一组为第i个），有start=时间节点，person=perLis[i], location=随机获得一个locaList的一个元素。
+
+添加一个添加location的功能，发送到location类，参考以下实现，只列出需要修改的部分
+import AV from 'leancloud-storage';
+
+// 初始化 LeanCloud
+AV.init({
+    appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+    appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+    serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+});
+
+// 保存地点到 LeanCloud
+function saveLocation() {
+    const locationInput = document.getElementById('locationInput').value.trim();
+    if (!locationInput) {
+        alert('请输入地点！');
+        return;
+    }
+
+    const Location = AV.Object.extend('Location');
+    const location = new Location();
+    location.set('name', locationInput);
+
+    location.save()
+        .then(() => {
+            alert('地点保存成功！');
+            document.getElementById('locationInput').value = ''; // 清空输入框
+            displayLocations(); // 更新显示的地点
+        })
+        .catch((error) => {
+            console.error('保存地点时发生错误：', error);
+            alert(`保存地点失败：${error.message}`);
+        });
+}
+
+// 获取并显示所有地点
+function displayLocations() {
+    const query = new AV.Query('Location');
+    query.find()
+        .then((results) => {
+            const locationList = document.getElementById('locationList');
+            locationList.innerHTML = ''; // 清空列表
+
+            results.forEach((location) => {
+                const locationName = location.get('name');
+                const locationId = location.id;
+
+                const span = document.createElement('span');
+                span.textContent = locationName;
+                span.style.marginRight = '10px'; // 添加空格分隔
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '删除';
+                deleteButton.style.marginLeft = '5px';
+                deleteButton.onclick = () => deleteLocation(locationId);
+
+                const wrapper = document.createElement('span');
+                wrapper.appendChild(span);
+                wrapper.appendChild(deleteButton);
+
+                locationList.appendChild(wrapper);
+            });
+        })
+        .catch((error) => {
+            console.error('获取地点时发生错误：', error);
+            alert(`获取地点失败：${error.message}`);
+        });
+}
+
+// 删除地点
+function deleteLocation(locationId) {
+    const location = AV.Object.createWithoutData('Location', locationId);
+    location.destroy()
+        .then(() => {
+            alert('地点删除成功！');
+            displayLocations(); // 更新显示的地点
+        })
+        .catch((error) => {
+            console.error('删除地点时发生错误：', error);
+            alert(`删除地点失败：${error.message}`);
+        });
+}
+// 初始化时加载地点列表
+window.onload = function () {
+    displayLocations();
+};
+
+// 将函数挂载到全局作用域
+window.saveLocation = saveLocation;
+window.startNotifications = startNotifications;
+
+
+写一个网站，进入后要求输入名称，请求leancloud的person类，名称必须要在person类里，接着本地存储下来名称，如果本地有名称那么开始时就不用弹出来询问名称了。然后有一个登出按钮，用来销毁本地存储的名称。
+然后有一个倒计时。倒计时实现可以参考下面（下面可以做到多设备同步时间）。然后请求tasks类里的所有数据（包含person，start，end，location）这几列，里面有一列是start表示开始的时间，如果现在的时间已经达到或者超过了start的时间，并且person一列是之前输入的名字，就弹出窗口提示“任务已经开始：person到location”（person和location都是对应的值），然后对于这个任务也设置一个倒计时（距离end（end也是一个参数）还有多久）。
+import AV from 'leancloud-storage';
+
+// 初始化 LeanCloud
+AV.init({
+    appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+    appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+    serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+});
+
+const apiKey = '68RUC9FIB396';
+const timeZoneDBUrl = `https://api.timezonedb.com/v2.1/get-time-zone?key=${apiKey}&format=json&by=zone&zone=Asia/Shanghai`;
+const nowApiUrl = 'https://sapi.k780.com/?app=life.time&appkey=75226&sign=fa340a9c0e85bd3567e6884d468e2f93&format=json';
+
+const secondsInput = document.getElementById('secondsInput');
+const startButton = document.getElementById('startButton');
+const removeButton = document.getElementById('removeButton');
+const countdownDisplay = document.getElementById('countdown');
+const alertSound = document.getElementById('alertSound');
+const settingsButton = document.getElementById('settingsButton');
+const settingsPanel = document.getElementById('settingsPanel');
+const switchAPIButton = document.getElementById('switchAPIButton');
+const closeSettingsButton = document.getElementById('closeSettingsButton');
+const currentTimeSource = document.getElementById('currentTimeSource');
+
+let countdownInterval;
+let initialTimeOffset; // 用于存储首次获取北京时间的时间戳
+let usingTimeZoneDB = true; // 默认使用 TimeZoneDB
+
+// 清空 LeanCloud 数据
+async function clearLeanCloudData() {
+    const query = new AV.Query('TimeData');
+    const results = await query.find();
+    for (const item of results) {
+        await item.destroy();
+    }
+}
+
+// 获取存储在 LeanCloud 上的时间
+async function getStoredTime() {
+    const query = new AV.Query('TimeData');
+    const results = await query.find();
+    if (results.length > 0) {
+        const timeData = results[0];
+        return new Date(timeData.get('time'));
+    }
+    return null;
+}
+
+// 获取当前时间戳（根据选中的 API）
+async function fetchInitialTime() {
+    try {
+        let url = usingTimeZoneDB ? timeZoneDBUrl : nowApiUrl;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (usingTimeZoneDB) {
+            if (data && data.status === 'OK' && data.timestamp) {
+                const adjustedTimestamp = data.timestamp - 480 * 60; // 加上 480 分钟（8 小时），转换为北京时间（秒级时间戳）
+                initialTimeOffset = adjustedTimestamp * 1000 - Date.now(); // 记录偏移值（毫秒）
+                return adjustedTimestamp * 1000; // 返回北京时间（毫秒）
+            } else {
+                throw new Error('获取北京时间失败');
+            }
+        } else {
+            if (data.success === '1' && data.result.timestamp) {
+                initialTimeOffset = data.result.timestamp * 1000 - Date.now(); // 记录偏移值（毫秒）
+                return data.result.timestamp * 1000; // 返回北京时间（毫秒）
+            } else {
+                throw new Error('获取北京时间失败');
+            }
+        }
+    } catch (error) {
+        console.error('获取北京时间失败:', error);
+        throw error;
+    }
+}
+
+
+
+// 使用初始偏移值计算当前北京时间
+function getCurrentBeijingTime() {
+    return Date.now() + initialTimeOffset; // 当前时间 + 偏移值 = 北京时间
+}
+
+// 显示倒计时
+function startCountdown(targetTime) {
+    clearInterval(countdownInterval);
+
+    countdownInterval = setInterval(() => {
+        try {
+            const now = getCurrentBeijingTime(); // 使用偏移值计算当前时间
+            const diff = targetTime - now; // 剩余时间（毫秒）
+
+            if (diff <= 0) {
+                clearInterval(countdownInterval);
+                countdownDisplay.textContent = '倒计时结束！';
+
+                // 播放音频提醒
+                alertSound.play();
+            } else {
+                const minutes = Math.floor(diff / 60000); // 剩余分钟
+                const seconds = Math.floor((diff % 60000) / 1000); // 剩余秒
+                countdownDisplay.textContent = `还剩下：${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        } catch (error) {
+            clearInterval(countdownInterval);
+            countdownDisplay.textContent = '倒计时更新失败';
+            console.error('倒计时刷新失败:', error);
+        }
+    }, 1000);
+}
+
+// 获取北京时间并加上秒数保存
+async function fetchBeijingTimeAndSave(seconds) {
+    try {
+        const currentTimestamp = getCurrentBeijingTime(); // 使用初始偏移值计算当前时间
+        const newTimestamp = currentTimestamp + seconds * 1000; // 加上秒数
+        const newTime = new Date(newTimestamp);
+
+        // 保存到 LeanCloud
+        await clearLeanCloudData(); // 清空旧数据
+        const TimeData = AV.Object.extend('TimeData');
+        const timeData = new TimeData();
+        timeData.set('time', newTime); // 保存为标准 Date 类型
+        await timeData.save();
+
+        // 开始倒计时
+        startCountdown(newTimestamp);
+    } catch (error) {
+        console.error('获取或保存时间失败:', error);
+        alert('获取或保存时间失败，请稍后再试。');
+    }
+}
+
+// 删除 LeanCloud 数据
+async function removeLeanCloudData() {
+    if (confirm('确认删除所有数据吗？')) {
+        await clearLeanCloudData();
+        countdownDisplay.textContent = '还剩下：--:--';
+        alert('数据已删除');
+    }
+}
+
+// 切换时间源
+function toggleAPI() {
+    usingTimeZoneDB = !usingTimeZoneDB; // 切换时间源
+    switchAPIButton.textContent = usingTimeZoneDB ? '切换到 NowAPI' : '切换到 TimeZoneDB';
+    currentTimeSource.textContent = usingTimeZoneDB ? 'TimeZoneDB' : 'NowAPI';
+    initializeCountdown(); // 重新初始化倒计时
+}
+
+// 页面加载时检查 LeanCloud 数据
+async function initializeCountdown() {
+    try {
+        await fetchInitialTime(); // 首次加载时从选中的 API 获取当前北京时间
+
+        const storedTime = await getStoredTime();
+        if (storedTime) {
+            const now = getCurrentBeijingTime(); // 使用初始偏移值计算当前时间
+            const diff = storedTime - now; // 计算剩余时间
+
+            if (diff > 0) {
+                startCountdown(storedTime.getTime());
+            } else {
+                countdownDisplay.textContent = '倒计时已结束，请重新设置时间。';
+            }
+        } else {
+            countdownDisplay.textContent = '请输入秒数并点击 Start。';
+        }
+    } catch (error) {
+        countdownDisplay.textContent = '初始化失败，请刷新页面重试';
+        console.error('初始化失败:', error);
+    }
+}
+
+// 打开设置面板
+function openSettingsPanel() {
+    settingsPanel.classList.remove('hidden');
+}
+
+// 关闭设置面板
+function closeSettingsPanel() {
+    settingsPanel.classList.add('hidden');
+}
+
+// 事件监听
+startButton.addEventListener('click', async () => {
+    const seconds = parseInt(secondsInput.value, 10);
+    if (isNaN(seconds) || seconds <= 0) {
+        alert('请输入有效的秒数');
+        return;
+    }
+
+    // 获取时间并保存
+    fetchBeijingTimeAndSave(seconds);
+});
+
+removeButton.addEventListener('click', removeLeanCloudData);
+settingsButton.addEventListener('click', openSettingsPanel);
+closeSettingsButton.addEventListener('click', closeSettingsPanel);
+switchAPIButton.addEventListener('click', toggleAPI);
+
+// 初始化页面
+initializeCountdown();
+
+首先，进入后要访问Round类，然后找到其中times最大的条目，开始倒计时，到那个条目的end还有多久，而不是瞎等着。
+然后，显示你获取到的任务列表（就是tasks类里的）。
+在任务进行时，添加一个上传功能，在任务结束后，需要立即取消掉上传功能的入口（只有任务期间可以上传）上传代码参考如下
+然后下面的代码还要略做修改：限制文件大小不超过25MB，允许一次上传多张文件。在上传后，发送信息到leancloud的myLog类，“”
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传文件示例</title>
+    <style>
+        #timer {
+            font-size: 20px;
+            color: red;
+            margin-top: 10px;
+        }
+        .image-preview img {
+            max-width: 100px;
+            max-height: 100px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>上传文件到 PicGo</h1>
+    <button id="startTimer">开始倒计时</button>
+    <p id="timer"></p>
+    <form id="uploadForm" style="display: none;">
+        <input type="file" id="fileInput" accept="*" required>
+        <div class="image-preview" id="imagePreview"></div>
+        <button type="submit" id="uploadButton">上传</button>
+    </form>
+    <p id="responseMessage" style="margin-top: 20px;"></p>
+
+    <script>
+        const startTimerButton = document.getElementById('startTimer');
+        const uploadForm = document.getElementById('uploadForm');
+        const timerDisplay = document.getElementById('timer');
+        const imagePreview = document.getElementById('imagePreview');
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        let timer;
+
+        // 倒计时逻辑
+        startTimerButton.addEventListener('click', () => {
+            uploadForm.style.display = 'block';
+            let timeRemaining = 180;
+            timerDisplay.innerText = `剩余时间: ${formatTime(timeRemaining)}`;
+
+            timer = setInterval(() => {
+                timeRemaining--;
+                timerDisplay.innerText = `剩余时间: ${formatTime(timeRemaining)}`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timer);
+                    timerDisplay.innerText = '上传时间已结束！';
+                    uploadForm.style.display = 'none';
+                }
+            }, 1000);
+
+            startTimerButton.disabled = true;
+        });
+
+        // 文件选择后显示缩略图
+        fileInput.addEventListener('change', () => {
+            imagePreview.innerHTML = ''; // 清空之前的预览
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    imagePreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 上传逻辑
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!fileInput.files.length) {
+                alert('请选择要上传的文件。');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('key', 'chv_hk8l_b4e3a5f15c38c5eace95dd4f31c826706862c5711d157843350b40b1fdee9e86184567db07ee2e55ff3c5c2d000629e2593c43381d2598fdaf8d51172237f41b');
+            formData.append('album_id', 'SK5pJ');
+            // formData.append('title', 'axas');
+            formData.append('source', fileInput.files[0]);
+
+            try {
+                uploadButton.style.display = 'none'; // 隐藏上传按钮
+                document.getElementById('responseMessage').innerText = '正在上传，请稍候...';
+
+                await fetch('https://www.picgo.net/api/1/upload', {
+                    method: 'POST',
+                    mode: 'no-cors', // 保持 no-cors 模式
+                    body: formData
+                });
+
+                document.getElementById('responseMessage').innerText = '文件上传请求已发送（无返回数据）。';
+            } catch (error) {
+                console.error('上传文件时出错:', error);
+                document.getElementById('responseMessage').innerText = '发生错误，请重试。';
+            }
+        });
+
+        // 格式化时间（mm:ss）
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html>

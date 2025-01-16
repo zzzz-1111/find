@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务设置与启动</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="number"], button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .menu {
+            margin-top: 20px;
+        }
+
+        #taskMenu {
+            display: none;
+        }
+
+        #statusMessage {
+            margin-top: 20px;
+            font-size: 14px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>任务设置与启动</h1>
+        <button id="settingsButton">设置</button>
+
+        <div id="taskMenu" class="menu">
+            <div class="form-group">
+                <label for="durationInput">输入时长（分钟）：</label>
+                <input type="number" id="durationInput" placeholder="输入时长">
+            </div>
+            <div class="form-group">
+                <label for="taskCountInput">输入任务数量 (m)：</label>
+                <input type="number" id="taskCountInput" placeholder="输入任务数量">
+            </div>
+            <div class="form-group">
+                <label for="taskDurationInput">输入任务时长（秒）：</label>
+                <input type="number" id="taskDurationInput" placeholder="输入任务时长">
+            </div>
+            <button id="startButton">启动任务</button>
+        </div>
+
+        <div id="statusMessage"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
+    <script>
+        AV.init({
+            appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+            appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+            serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+        });
+
+        const settingsButton = document.getElementById('settingsButton');
+        const taskMenu = document.getElementById('taskMenu');
+        const startButton = document.getElementById('startButton');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        const durationInput = document.getElementById('durationInput');
+        const taskCountInput = document.getElementById('taskCountInput');
+        const taskDurationInput = document.getElementById('taskDurationInput');
+        
+        settingsButton.addEventListener('click', () => {
+            taskMenu.style.display = taskMenu.style.display === 'block' ? 'none' : 'block';
+        });
+
+        startButton.addEventListener('click', async () => {
+            const duration = parseInt(durationInput.value);
+            const m = parseInt(taskCountInput.value);
+            const taskDuration = parseInt(taskDurationInput.value);
+
+            if (isNaN(duration) || isNaN(m) || isNaN(taskDuration)) {
+                alert('请确保所有输入框都有有效数字');
+                return;
+            }
+
+            statusMessage.innerText = '任务启动中，请稍候...';
+
+            const now = new Date();
+            const endTime = new Date(now.getTime() + duration * 60 * 1000); // 结束时间
+
+            try {
+                // 获取参与人数 n
+                const personQuery = new AV.Query('person');
+                const persons = await personQuery.find();
+                const n = persons.length;
+
+                const gameStartTime = now.getTime() + 60 * 1000;  // 游戏开始时间，当前时间 + 1分钟
+                const gameEndTime = gameStartTime + duration * 60 * 1000;  // 游戏结束时间
+
+                let timeLis = [];
+
+                // 随机生成 n * m 个时间节点
+                for (let i = 0; i < n * m; i++) {
+                    const randomTime = gameStartTime + Math.random() * (gameEndTime - gameStartTime);  // 随机生成时间节点
+                    timeLis.push(randomTime);
+                }
+
+                // 对时间节点进行排序
+                timeLis.sort((a, b) => a - b);  // 升序排序
+
+                // 获取所有人员名称 perLis
+                const perLis = persons.map(person => person.get('name'));
+
+                // 获取location类的所有记录
+                const locationQuery = new AV.Query('Location');
+                const locations = await locationQuery.find();
+                const locaList = locations.map(location => location.get('name'));
+
+                // 发送任务请求
+                for (let i = 0; i < m; i++) {
+                    const timeGroup = timeLis.slice(i * n, (i + 1) * n); // 获取当前组的时间节点
+                    const groupPerLis = perLis; // 获取当前组的人员
+                    const groupLocaList = locaList.slice(); // 复制location列表
+
+                    // 随机打乱人员列表
+                    shuffle(groupPerLis);
+                    shuffle(groupPerLis);
+
+                    // 遍历每个时间节点
+                    for (let j = 0; j < timeGroup.length; j++) {
+                        const taskData = {
+                            start: new Date(timeGroup[j]),
+                            end: new Date(timeGroup[j] + taskDuration * 1000),
+                            person: groupPerLis[j],
+                            location: groupLocaList[Math.floor(Math.random() * groupLocaList.length)],
+                        };
+                        const Task = AV.Object.extend('tasks');
+                        const task = new Task();
+                        task.set('start', taskData.start);
+                        task.set('end', taskData.end);
+                        task.set('person', taskData.person);
+                        task.set('location', taskData.location);
+                        await task.save();
+                    }
+                }
+
+                statusMessage.innerText = '任务已成功发送到LeanCloud！';
+            } catch (error) {
+                console.error('任务创建失败:', error);
+                statusMessage.innerText = '任务创建失败，请重试！';
+            }
+        });
+
+        // 随机打乱数组
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+    </script>
+</body>
+</html>
