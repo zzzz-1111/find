@@ -71,11 +71,6 @@
             font-size: 16px;
             color: #555;
         }
-
-        #useItemForm {
-            display: none;
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
@@ -99,28 +94,11 @@
 
         <!-- 重置按钮 -->
         <button id="resetDataButton" style="display: none;">重置数据</button>
-        <br>
-        <!-- 使用道具按钮 -->
-        <button id="useItemButton">使用道具</button>
-
-        <!-- 使用道具的表单 -->
-        <div id="useItemForm">
-            <div class="form-group">
-                <label for="personInput">请输入人名（Person）：</label>
-                <input type="text" id="personInput" placeholder="输入人名">
-            </div>
-            <div class="form-group">
-                <label for="effectInput">请输入效果（Effect）：</label>
-                <textarea id="effectInput" placeholder="输入效果" rows="4"></textarea>
-            </div>
-            <button id="sendLogButton">发送日志</button>
-        </div>
-
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
     <script>
-        const cardid = "rxvcrk";  // skip
+        const cardid = "{uid}";  // skip
 
         // 初始化 LeanCloud
         AV.init({
@@ -179,7 +157,7 @@
                 alert('保存数据失败，请重试');
             }
         });
-
+        
         // 重置数据按钮点击事件
         document.getElementById('resetDataButton').addEventListener('click', async () => {
             try {
@@ -214,6 +192,7 @@
                         const Card = AV.Object.extend('card');
                         const card = new Card();
                         card.set('cardid', cardid);
+
                         try {
                             card.set('title', newTitle);
                             card.set('content', newContent);
@@ -230,37 +209,6 @@
             } catch (error) {
                 console.error('重置数据失败:', error);
                 alert('重置数据失败，请重试');
-            }
-        });
-
-        // 使用道具按钮点击事件，显示表单
-        document.getElementById('useItemButton').addEventListener('click', () => {
-            document.getElementById('useItemForm').style.display = 'block';
-        });
-
-        // 发送日志按钮点击事件
-        document.getElementById('sendLogButton').addEventListener('click', async () => {
-            const person = document.getElementById('personInput').value.trim();
-            const effect = document.getElementById('effectInput').value.trim();
-
-            if (!person || !effect) {
-                alert('人名和效果不能为空！');
-                return;
-            }
-
-            const title = document.getElementById('titleDisplay').innerText;
-            const content = title + ' ' + effect;
-
-            try {
-                const MyLog = AV.Object.extend('myLog');
-                const log = new MyLog();
-                log.set('person', person);
-                log.set('content', content);
-                await log.save();
-                alert('日志发送成功！');
-            } catch (error) {
-                console.error('发送日志失败:', error);
-                alert('发送日志失败，请重试');
             }
         });
 
