@@ -537,3 +537,14 @@ initializeCountdown();
     </script>
 </body>
 </html>
+
+写网页
+检查leancloud check类里是否有数据，如果没有的话：
+有两个输入框，前一个框是迷惑选项，后一个框谜底。
+两个框里的数据都用空格分隔。然后将数据上传，每个数据分为name（即字符串）和right（bool类型表示是不是谜底）
+然后再上传一个特殊数据，name为timesecond
+如果有数据的话：
+获取所有迷惑选项和谜底，打乱顺序显示，然后用户可以选择其中的若干个，点击提交按钮；程序检验是否选择了全部谜底并且没有选择到任何一个迷惑选项，若是的话，弹出成功按钮，否则弹出失败按钮。
+发送到myLog，content为“校验失败”，person为“校验器”
+
+添加一个按钮，名称为使用道具，按了之后显示表单，表单要求填写 人（person），效果(effect)，然后将这个发送至myLog，person为填的person，content为title+effect。

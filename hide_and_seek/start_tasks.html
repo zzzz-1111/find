@@ -252,9 +252,10 @@
                 function mergeTasks(tasks) {
                     const n = persons.length;
                     const selectedIndices = [];
-
+                    let numt = 0
                     // 确定 n/2 个随机时间节点（70% 来自前半部分，30% 来自后半部分）
-                    while (selectedIndices.length < Math.floor(n / 2)) {
+                    while (selectedIndices.length < Math.floor(n / 2) && numt < n * 10) {
+                        numt = numt + 1
                         const randomValue = Math.random();
                         const rangeStart = 0;
                         const rangeEnd = n;

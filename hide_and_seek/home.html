@@ -68,15 +68,28 @@
                 font-size: 16px;
             }
         </style>
+    <style>
+        #countdown {
+            width: 100%;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 18px;
+            margin-bottom: 20px; /* 给页面顶部留下空间 */
+        }
+    </style>
     
 </head>
 <body>
     <h1>任务与文件上传</h1>
+    <div id="countdown">Time remaining: <span id="timer"></span></div>
     <div id="namePrompt">
         <input type="text" id="nameInput" placeholder="请输入名称">
         <button id="submitName">确认名称</button>
     </div>
     <button id="logoutButton" style="display:none;">登出</button>
+    
     <div id="taskList" style="display:none;">
         <h2>任务列表</h2>
         <ul id="tasks"></ul>
@@ -96,6 +109,7 @@
     <button id="resurrectBtn">复活</button>
 
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.3.0/dist/av-min.js"></script>
+    
     <script>
 
         // 获取新增的按钮和文件输入框
@@ -149,7 +163,52 @@
             appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
             serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
         });
+        
+        async function getCountdown() {
+            const query = new AV.Query('Round');
+            query.descending('times'); // 按 times 降序排列
+            query.limit(1); // 获取 times 最大的条目
 
+            try {
+                const result = await query.first();
+                if (result) {
+                    const endTime = new Date(result.get('end')); // 获取结束时间
+                    startCountdown(endTime);
+                } else {
+                    document.getElementById('countdown').innerText = '未找到倒计时数据';
+                }
+            } catch (error) {
+                console.error('Error fetching countdown:', error);
+                document.getElementById('countdown').innerText = '加载失败';
+            }
+        }
+
+        function startCountdown(endTime) {
+            function updateCountdown() {
+                const now = new Date();
+                const timeRemaining = endTime - now;
+
+                if (timeRemaining <= 0) {
+                    document.getElementById('countdown').innerText = '活动已结束';
+                    clearInterval(interval);
+                    return;
+                }
+
+                const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+                document.getElementById('countdown').innerText =
+                    `Time remaining：${hours} 小时 ${minutes} 分钟 ${seconds} 秒`;
+            }
+
+            updateCountdown(); // 初始化更新
+            const interval = setInterval(updateCountdown, 1000); // 每秒更新一次
+        }
+
+        getCountdown();
+        
         const namePrompt = document.getElementById('namePrompt');
         const nameInput = document.getElementById('nameInput');
         const submitNameButton = document.getElementById('submitName');

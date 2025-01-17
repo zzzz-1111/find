@@ -37,6 +37,6 @@ def generate_qr_code(url, name):
 
 # 示例使用
 if __name__ == "__main__":
-    website = "https://zzzz-1111.github.io/find/hide_and_seek/start_tasks"
-    filename = "start_tasks"
+    website = "https://zzzz-1111.github.io/find/hide_and_seek/check.html"
+    filename = "check"
     generate_qr_code(website, filename)

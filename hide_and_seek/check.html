@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeanCloud Check</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.3.0/dist/av-min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+        }
+        input[type="text"] {
+            width: calc(100% - 22px); /* Adjust for padding */
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .reset-button {
+            background-color: #dc3545;
+        }
+        .reset-button:hover {
+            background-color: #a71d2a;
+        }
+        #options-form label {
+            display: inline-block;
+            margin: 5px 10px;
+        }
+        #options-form input[type="checkbox"] {
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        #no-data-section, #data-section {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="no-data-section" style="display: none;">
+        <h1>校验器</h1>
+        <label for="confuse">迷惑选项 (用空格分隔):</label><br>
+        <input type="text" id="confuse" placeholder="输入迷惑选项"><br>
+
+        <label for="answers">谜底 (用空格分隔):</label><br>
+        <input type="text" id="answers" placeholder="输入谜底"><br>
+
+        <button onclick="uploadData()">上传数据</button>
+        <button class="reset-button" onclick="confirmReset()">重置</button>
+    </div>
+
+    <div id="data-section" style="display: none;">
+        <h1>校验谜题</h1>
+        <form id="options-form"></form>
+        <button onclick="submitSelection()">提交</button>
+        <button class="reset-button" onclick="confirmReset()">重置</button>
+    </div>
+
+    <script>
+        // 初始化 LeanCloud
+        AV.init({
+            appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+            appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+            serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+        });
+
+        async function checkData() {
+            const query = new AV.Query('check');
+            try {
+                const results = await query.find();
+                if (results.length === 0) {
+                    document.getElementById('no-data-section').style.display = 'block';
+                } else {
+                    displayOptions(results);
+                    document.getElementById('data-section').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error checking data:', error);
+            }
+        }
+
+        async function uploadData() {
+            const confuse = document.getElementById('confuse').value.trim().split(' ');
+            const answers = document.getElementById('answers').value.trim().split(' ');
+
+            try {
+                for (const option of confuse) {
+                    const obj = new AV.Object('check');
+                    obj.set('name', option);
+                    obj.set('right', false);
+                    await obj.save();
+                }
+
+                for (const answer of answers) {
+                    const obj = new AV.Object('check');
+                    obj.set('name', answer);
+                    obj.set('right', true);
+                    await obj.save();
+                }
+
+                const timeObj = new AV.Object('check');
+                timeObj.set('name', 'timesecond');
+                await timeObj.save();
+
+                alert('数据上传成功!');
+                location.reload();
+            } catch (error) {
+                console.error('Error uploading data:', error);
+            }
+        }
+
+        function displayOptions(results) {
+            const form = document.getElementById('options-form');
+            form.innerHTML = '';
+
+            const options = results.map(item => ({
+                id: item.id,
+                name: item.get('name'),
+                right: item.get('right')
+            })).filter(option => option.name !== 'timesecond');
+
+            options.sort(() => Math.random() - 0.5); // 打乱顺序
+
+            for (const option of options) {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = option.id;
+                checkbox.value = option.name;
+                checkbox.dataset.right = option.right;
+
+                const label = document.createElement('label');
+                label.htmlFor = option.id;
+                label.textContent = option.name;
+
+                form.appendChild(checkbox);
+                form.appendChild(label);
+            }
+        }
+
+        async function submitSelection() {
+            const checkboxes = document.querySelectorAll('#options-form input[type="checkbox"]');
+            let allCorrect = true;
+
+            for (const checkbox of checkboxes) {
+                const isChecked = checkbox.checked;
+                const isRight = checkbox.dataset.right === 'true';
+
+                if ((isChecked && !isRight) || (!isChecked && isRight)) {
+                    allCorrect = false;
+                    break;
+                }
+            }
+
+            if (allCorrect) {
+                await sendLog('成功！校验成功!');
+                alert('校验成功!');
+            } else {
+                await sendLog('失败！校验失败!');
+                alert('校验失败!');
+            }
+        }
+
+        async function sendLog(content) {
+            const log = new AV.Object('myLog');
+            log.set('content', content);
+            log.set('person', '校验器');
+            try {
+                await log.save();
+            } catch (error) {
+                console.error('Error sending log:', error);
+            }
+        }
+
+        function confirmReset() {
+            if (confirm('确认要重置所有数据吗？此操作不可撤销！')) {
+                resetData();
+            }
+        }
+
+        async function resetData() {
+            try {
+                const query = new AV.Query('check');
+                const results = await query.find();
+
+                for (const obj of results) {
+                    await obj.destroy();
+                }
+
+                alert('数据已重置!');
+                location.reload();
+            } catch (error) {
+                console.error('Error resetting data:', error);
+            }
+        }
+
+        checkData();
+    </script>
+</body>
+</html>

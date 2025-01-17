@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>卡片管理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        #titleDisplay {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #007BFF;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #contentDisplay {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        #useItemForm {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>卡片管理</h1>
+        <div id="titleDisplay"></div>
+        <div id="contentDisplay"></div>
+
+        <!-- 输入表单 -->
+        <div id="inputForm" style="display: none;">
+            <div class="form-group">
+                <label for="titleInput">请输入标题：</label>
+                <input type="text" id="titleInput" placeholder="输入标题">
+            </div>
+            <div class="form-group">
+                <label for="contentInput">请输入内容：</label>
+                <textarea id="contentInput" placeholder="输入内容" rows="4"></textarea>
+            </div>
+            <button id="saveDataButton">保存数据</button>
+        </div>
+
+        <!-- 重置按钮 -->
+        <button id="resetDataButton" style="display: none;">重置数据</button>
+        <br>
+        <!-- 使用道具按钮 -->
+        <button id="useItemButton">使用道具</button>
+
+        <!-- 使用道具的表单 -->
+        <div id="useItemForm">
+            <div class="form-group">
+                <label for="personInput">请输入人名（Person）：</label>
+                <input type="text" id="personInput" placeholder="输入人名">
+            </div>
+            <div class="form-group">
+                <label for="effectInput">请输入效果（Effect）：</label>
+                <textarea id="effectInput" placeholder="输入效果" rows="4"></textarea>
+            </div>
+            <button id="sendLogButton">发送日志</button>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.10.0/dist/av-min.js"></script>
+    <script>
+        const cardid = "pk24po";  // skip
+
+        // 初始化 LeanCloud
+        AV.init({
+            appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+            appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+            serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+        });
+
+        // 检查 LeanCloud 中是否有对应的 card
+        async function checkCardData() {
+            try {
+                const query = new AV.Query('card');
+                query.equalTo('cardid', cardid);  // 根据 cardid 查询
+                const existingCard = await query.first();  // 获取第一条匹配的记录
+
+                if (existingCard) {
+                    // 如果找到记录，展示 title 和 content
+                    const title = existingCard.get('title');
+                    const content = existingCard.get('content');
+                    document.getElementById('titleDisplay').innerText = title;
+                    document.getElementById('contentDisplay').innerText = content;
+
+                    // 显示重置按钮
+                    document.getElementById('resetDataButton').style.display = 'inline-block';
+                } else {
+                    // 如果没有找到记录，显示输入表单
+                    document.getElementById('inputForm').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('查询数据失败:', error);
+                alert('查询数据时出错，请稍后重试');
+            }
+        }
+
+        // 保存输入的数据到 LeanCloud
+        document.getElementById('saveDataButton').addEventListener('click', async () => {
+            const title = document.getElementById('titleInput').value.trim();
+            const content = document.getElementById('contentInput').value.trim();
+
+            if (!title || !content) {
+                alert('标题和内容不能为空！');
+                return;
+            }
+
+            try {
+                const Card = AV.Object.extend('card');
+                const card = new Card();
+                card.set('cardid', cardid);
+                card.set('title', title);
+                card.set('content', content);
+                await card.save();
+                alert('数据保存成功！');
+                location.reload();  // 保存后刷新页面
+            } catch (error) {
+                console.error('保存数据失败:', error);
+                alert('保存数据失败，请重试');
+            }
+        });
+
+        // 重置数据按钮点击事件
+        document.getElementById('resetDataButton').addEventListener('click', async () => {
+            try {
+                const query = new AV.Query('card');
+                query.equalTo('cardid', cardid);
+                const existingCard = await query.first();
+
+                if (existingCard) {
+                    // 显示表单，并填充默认数据
+                    const title = existingCard.get('title');
+                    const content = existingCard.get('content');
+
+                    document.getElementById('titleInput').value = title;
+                    document.getElementById('contentInput').value = content;
+
+                    document.getElementById('inputForm').style.display = 'block';
+                    document.getElementById('titleDisplay').innerText = '';
+                    document.getElementById('contentDisplay').innerText = '';
+                    document.getElementById('resetDataButton').style.display = 'none';
+
+                    // 修改保存按钮点击事件，覆盖原有数据
+                    document.getElementById('saveDataButton').onclick = async () => {
+                        const newTitle = document.getElementById('titleInput').value.trim();
+                        const newContent = document.getElementById('contentInput').value.trim();
+
+                        if (!newTitle || !newContent) {
+                            alert('标题和内容不能为空！');
+                            return;
+                        }
+
+                        await existingCard.destroy();
+                        const Card = AV.Object.extend('card');
+                        const card = new Card();
+                        card.set('cardid', cardid);
+                        try {
+                            card.set('title', newTitle);
+                            card.set('content', newContent);
+                            await card.save();
+                            location.reload(); // 保存后刷新页面
+                        } catch (error) {
+                            console.error('更新数据失败:', error);
+                            alert('更新数据失败，请重试');
+                        }
+                    };
+                } else {
+                    alert('未找到对应的卡片信息！');
+                }
+            } catch (error) {
+                console.error('重置数据失败:', error);
+                alert('重置数据失败，请重试');
+            }
+        });
+
+        // 使用道具按钮点击事件，显示表单
+        document.getElementById('useItemButton').addEventListener('click', () => {
+            document.getElementById('useItemForm').style.display = 'block';
+        });
+
+        // 发送日志按钮点击事件
+        document.getElementById('sendLogButton').addEventListener('click', async () => {
+            const person = document.getElementById('personInput').value.trim();
+            const effect = document.getElementById('effectInput').value.trim();
+
+            if (!person || !effect) {
+                alert('人名和效果不能为空！');
+                return;
+            }
+
+            const title = document.getElementById('titleDisplay').innerText;
+            const content = title + ' ' + effect;
+
+            try {
+                const MyLog = AV.Object.extend('myLog');
+                const log = new MyLog();
+                log.set('person', person);
+                log.set('content', content);
+                await log.save();
+                alert('日志发送成功！');
+            } catch (error) {
+                console.error('发送日志失败:', error);
+                alert('发送日志失败，请重试');
+            }
+        });
+
+        // 页面加载时检查 card 数据
+        checkCardData();
+    </script>
+</body>
+</html>
