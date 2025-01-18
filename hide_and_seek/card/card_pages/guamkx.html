@@ -243,19 +243,20 @@
             const person = document.getElementById('personInput').value.trim();
             const effect = document.getElementById('effectInput').value.trim();
 
-            if (!person || !effect) {
-                alert('人名和效果不能为空！');
+            if (!person) {
+                alert('人名不能为空！');
                 return;
             }
 
             const title = document.getElementById('titleDisplay').innerText;
-            const content = title + ' ' + effect;
-
+            const content = document.getElementById('contentDisplay').innerText;
             try {
-                const MyLog = AV.Object.extend('myLog');
+                const MyLog = AV.Object.extend('itemLog');
                 const log = new MyLog();
                 log.set('person', person);
-                log.set('content', content);
+                log.set('title', title);
+                log.set('description', content);
+                log.set('effect', effect);
                 await log.save();
                 alert('日志发送成功！');
             } catch (error) {
