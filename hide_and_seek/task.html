@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>itemLog Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage/dist/av-min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        #logContainer {
+            margin: 20px auto;
+            max-width: 800px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #logContainer table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #logContainer th, #logContainer td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        #logContainer th {
+            background-color: #007bff;
+            color: white;
+        }
+        button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+        }
+        #logContainer tr:hover {
+            background-color: #f0f8ff;
+        }
+
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 18px;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; margin-top: 20px;">itemLog 数据显示</h1>
+    <div class="button">
+        <a href="./home.html">
+            <button>返回home</button>
+        </a>
+    </div>
+    <div id="logContainer">
+        <table>
+            <thead>
+                <tr>
+                    <th>Person</th>
+                    <th>Item Title</th>
+                    <th>Item Description</th>
+                    <th>Item Effect</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody id="logTableBody">
+                <!-- 数据将动态填充 -->
+            </tbody>
+        </table>
+    </div>
+    <p id="loading" class="loading">加载中...</p>
+
+    <script>
+        // 初始化 LeanCloud
+        AV.init({
+            appId: 'a4O2WP8ZKjkOH8RbLNXgLTAE-gzGzoHsz',
+            appKey: 'At7BrmqGKGPqcbHXwtEL6Y3e',
+            serverURLs: 'https://a4o2wp8z.lc-cn-n1-shared.com',
+        });
+
+        // 读取 itemLog 数据
+        async function loaditemLogData() {
+            try {
+                const query = new AV.Query('itemLog');
+                query.descending('createdAt'); // 按时间降序排列
+
+                const results = await query.find();
+
+                const logTableBody = document.getElementById('logTableBody');
+                const loadingMessage = document.getElementById('loading');
+
+                // 清空加载中信息
+                loadingMessage.style.display = 'none';
+
+                // 如果没有数据
+                if (results.length === 0) {
+                    logTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">没有数据</td></tr>';
+                    return;
+                }
+
+                // 填充数据
+                results.forEach(log => {
+                    const person = log.get('person') || '未知';
+                    const title = log.get('title') || '未知';
+                    const description = log.get('description') || '无内容';
+                    const effect = log.get('effect') || '无内容';
+                    const createdAt = log.createdAt ? formatDate(log.createdAt) : '未知时间';
+
+                    const row = `
+                        <tr>
+                            <td>${person}</td>
+                            <td>${title}</td>
+                            <td>${description}</td>
+                            <td>${effect}</td>
+                            <td>${createdAt}</td>
+                        </tr>
+                    `;
+                    logTableBody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('加载 itemLog 数据失败:', error);
+                alert('加载 itemLog 数据失败，请检查网络或配置');
+            }
+        }
+
+        // 格式化日期到小时
+        function formatDate(date) {
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        // 加载数据
+        loaditemLogData();
+    </script>
+</body>
+</html>

@@ -117,10 +117,6 @@
                     await obj.save();
                 }
 
-                const timeObj = new AV.Object('check');
-                timeObj.set('name', 'timesecond');
-                await timeObj.save();
-
                 alert('数据上传成功!');
                 location.reload();
             } catch (error) {
@@ -158,27 +154,37 @@
 
         async function submitSelection() {
             const checkboxes = document.querySelectorAll('#options-form input[type="checkbox"]');
-            let allCorrect = true;
+            let correctCount = 0;
+            let totalCorrect = 0;
 
             for (const checkbox of checkboxes) {
                 const isChecked = checkbox.checked;
                 const isRight = checkbox.dataset.right === 'true';
 
-                if ((isChecked && !isRight) || (!isChecked && isRight)) {
-                    allCorrect = false;
-                    break;
+                if (isRight) {
+                    totalCorrect++; // 总正确答案数量
+                }
+                if (isChecked && isRight) {
+                    correctCount++; // 选中并正确的数量
                 }
             }
 
+            const allCorrect = correctCount === totalCorrect && 
+                                Array.from(checkboxes).every(checkbox => {
+                                    const isChecked = checkbox.checked;
+                                    const isRight = checkbox.dataset.right === 'true';
+                                    return (isChecked && isRight) || (!isChecked && !isRight);
+                                });
+
             if (allCorrect) {
-                await sendLog('成功！校验成功!');
-                alert('校验成功!');
+                await sendLog(`成功！校验成功！正确数量：${correctCount}/${totalCorrect}`);
+                alert(`校验成功！正确数量：${correctCount}/${totalCorrect}`);
             } else {
-                await sendLog('失败！校验失败!');
-                alert('校验失败!');
+                await sendLog(`失败！校验失败！正确数量：${correctCount}/${totalCorrect}`);
+                alert(`校验失败！正确数量：${correctCount}/${totalCorrect}`);
             }
         }
-
+        
         async function sendLog(content) {
             const log = new AV.Object('myLog');
             log.set('content', content);
