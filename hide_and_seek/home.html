@@ -418,7 +418,7 @@
         // 处理没有当前任务时的逻辑
         function handleNoCurrentTask(nextTask) {
             if (!currentTask && nextTask) {
-                const nextTaskDetails = `下一个任务：${nextTask.get('location')}，开始时间：${formatTime(nextTask.get('start'))}`;
+                const nextTaskDetails = `下一个任务开始时间：${formatTime(nextTask.get('start'))}`;
                 const listItem = document.createElement('li');
                 listItem.innerText = nextTaskDetails;
                 tasksList.appendChild(listItem);
